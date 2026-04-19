@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>차 관능평가 채점 시트</title>
+<style>
+:root {
+  --bg: #faf8f3;
+  --card: #ffffff;
+  --border: #e8e2d9;
+  --text: #2c2c2c;
+  --muted: #7a7065;
+  --green: #4a7a52;
+  --green-dark: #1e2e20;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+header {
+  background: var(--green-dark);
+  color: white;
+  padding: 22px 28px 18px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+header h1 { font-size: 1.15rem; font-weight: 600; }
+header p  { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 3px; }
+.hdr-right { text-align: right; }
+.hdr-total { font-size: 2.2rem; font-weight: 700; line-height: 1; color: white; }
+.hdr-sub   { font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+.wrap { max-width: 700px; margin: 0 auto; padding: 20px 14px 80px; }
+
+/* Info */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+@media(max-width:480px) { .info-grid { grid-template-columns: 1fr; } }
+.field label { display: block; font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 4px; }
+.field input, .field select {
+  width: 100%; padding: 7px 10px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card); font-size: 0.88rem; color: var(--text); font-family: inherit;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--green); }
+
+/* Weight bar */
+.weight-note {
+  background: #f0f7f1; border: 1px solid #c8deca;
+  border-radius: 10px; padding: 9px 14px;
+  font-size: 0.74rem; color: #3d6645;
+  margin-bottom: 16px;
+  display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+}
+.wn-item { display: flex; align-items: center; gap: 5px; }
+.wn-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* Score scale legend */
+.scale-legend {
+  display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.scale-legend span { font-size: 0.68rem; color: var(--muted); }
+.sl-item {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.7rem; color: var(--muted);
+}
+.sl-num {
+  width: 20px; height: 20px; border-radius: 5px;
+  background: #ede8e0; color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 600;
+}
+
+/* Criterion cards */
+.crit-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  margin-bottom: 10px;
+}
+.crit-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid #f0ece6;
+}
+.crit-head-left { display: flex; align-items: center; gap: 10px; }
+.crit-stripe { width: 4px; height: 36px; border-radius: 2px; flex-shrink: 0; }
+.crit-name  { font-size: 0.98rem; font-weight: 700; }
+.crit-zh    { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+.crit-badge {
+  font-size: 0.63rem; padding: 2px 7px; border-radius: 6px; font-weight: 500;
+}
+.badge-dry { background: #f0f0e8; color: #706050; border: 1px solid #d0c8b0; }
+.badge-wet { background: #e8f0f8; color: #405870; border: 1px solid #b8d0e8; }
+
+.crit-head-right { text-align: right; }
+.crit-avg  { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+.crit-avg-of5 { font-size: 0.75rem; color: var(--muted); }
+.crit-contrib-txt { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+.crit-contrib-txt b { font-weight: 700; }
+
+/* Sub-items */
+.sub-list { padding: 4px 0 8px; }
+.sub-item {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  padding: 9px 18px 8px;
+  gap: 12px;
+}
+.sub-item:not(:last-child) { border-bottom: 1px solid #f5f2ed; }
+
+.sub-info { flex: 1; min-width: 0; }
+.sub-name { font-size: 0.83rem; font-weight: 600; color: var(--text); }
+.sub-hint { font-size: 0.68rem; color: #a09888; margin-top: 2px; line-height: 1.4; }
+
+.sub-btns { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.sb {
+  width: 30px; height: 28px; border-radius: 7px;
+  border: 1px solid var(--border);
+  background: #f5f1ec; color: var(--muted);
+  font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all .12s;
+  display: flex; align-items: center; justify-content: center;
+}
+.sb:hover { border-color: #b0a898; color: var(--text); }
+.sb.sel   { color: white; border-color: transparent; }
+.sb-label {
+  font-size: 0.68rem; color: var(--muted);
+  min-width: 26px; text-align: left;
+  margin-left: 2px;
+}
+
+/* Result card */
+.result-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px 20px 14px;
+  margin-bottom: 12px;
+}
+.result-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.result-total { font-size: 2.8rem; font-weight: 800; line-height: 1; color: var(--green); }
+.result-total sub { font-size: 1rem; font-weight: 400; color: var(--muted); vertical-align: baseline; margin-left: 3px; }
+.grade-badge { padding: 6px 16px; border-radius: 20px; font-size: 0.88rem; font-weight: 700; color: white; }
+
+.bench-lbl { font-size: 0.67rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+.bench-track {
+  position: relative; height: 10px; border-radius: 5px;
+  background: linear-gradient(to right, #c44b37, #e07a30, #c8a730, #7ab64a, #2d7a3a);
+  margin-bottom: 5px;
+}
+.bench-marker {
+  position: absolute; top: -5px;
+  width: 20px; height: 20px; background: white;
+  border: 3px solid #333; border-radius: 50%;
+  transform: translateX(-50%); transition: left 0.4s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.bench-axis  { display: flex; justify-content: space-between; font-size: 0.62rem; color: #b0a898; margin-bottom: 12px; }
+.contrib-lbl { font-size: 0.67rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+.contrib-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.cr-name  { font-size: 0.75rem; color: var(--text); width: 36px; flex-shrink: 0; }
+.cr-avg   { font-size: 0.72rem; color: var(--muted); width: 38px; flex-shrink: 0; }
+.cr-track { flex: 1; background: #f0ece6; border-radius: 4px; height: 12px; overflow: hidden; }
+.cr-fill  { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.cr-val   { font-size: 0.72rem; width: 34px; text-align: right; flex-shrink: 0; font-weight: 600; }
+
+/* Notes */
+.notes-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 13px 16px; margin-bottom: 13px; }
+.notes-lbl  { font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin-bottom: 7px; }
+textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 0.85rem; font-family: inherit;
+  color: var(--text); resize: vertical; min-height: 68px; background: #fdfcf9;
+}
+textarea:focus { outline: none; border-color: var(--green); }
+
+/* Buttons */
+.save-btn {
+  width: 100%; padding: 12px;
+  background: var(--green-dark); color: white; border: none;
+  border-radius: 12px; font-size: 0.92rem; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: background .15s; margin-bottom: 6px;
+}
+.save-btn:hover { background: #2c4030; }
+.save-note { font-size: 0.68rem; color: var(--muted); text-align: center; margin-bottom: 22px; }
+
+/* Sources */
+.src { border-top: 1px solid var(--border); padding-top: 16px; }
+.src-title { font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin-bottom: 6px; }
+.src-list { list-style: none; }
+.src-list li { font-size: 0.66rem; color: #a09890; padding-left: 12px; position: relative; margin-bottom: 2px; line-height: 1.45; }
+.src-list li::before { content: '·'; position: absolute; left: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>차(茶) 관능평가 채점 시트</h1>
+    <p>GB/T 23776-2018 · 5항목 가중 채점 · 세부항목 1–5점</p>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-total" id="hTotal">—</div>
+    <div class="hdr-sub">/ 100점</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Info -->
+  <div class="info-grid" style="margin-top:4px;">
+    <div class="field">
+      <label>차 이름</label>
+      <input type="text" id="teaName" placeholder="예: 봉황단총 밀란향 2026년">
+    </div>
+    <div class="field">
+      <label>차 종류</label>
+      <select id="teaType" onchange="updateAll()">
+        <option value="oolong">우롱차</option>
+        <option value="green-premium">명차 녹차</option>
+        <option value="green-common">일반 녹차</option>
+        <option value="white">백차</option>
+        <option value="yellow">황차</option>
+        <option value="black-gf">공부홍차</option>
+        <option value="black-ctc">홍쇄차 (CTC)</option>
+        <option value="dark">흑차·보이차</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>평가자</label>
+      <input type="text" id="evaluator" placeholder="이름">
+    </div>
+    <div class="field">
+      <label>평가 일자</label>
+      <input type="date" id="evalDate">
+    </div>
+  </div>
+
+  <!-- Weight note -->
+  <div class="weight-note" id="weightNote"></div>
+
+  <!-- Scale legend -->
+  <div class="scale-legend">
+    <span>평점 기준 —</span>
+    <div class="sl-item"><div class="sl-num">1</div> 불량·결점</div>
+    <div class="sl-item"><div class="sl-num">2</div> 미흡</div>
+    <div class="sl-item"><div class="sl-num">3</div> 보통</div>
+    <div class="sl-item"><div class="sl-num">4</div> 양호</div>
+    <div class="sl-item"><div class="sl-num">5</div> 우수</div>
+  </div>
+
+  <!-- Criterion cards -->
+  <div id="critCards"></div>
+
+  <!-- Result -->
+  <div class="result-card">
+    <div class="result-top">
+      <div>
+        <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;">가중 총점</div>
+        <div class="result-total" id="rTotal">—<sub>/ 100</sub></div>
+      </div>
+      <div class="grade-badge" id="rGrade">—</div>
+    </div>
+
+    <div class="bench-lbl">품질 기준 비교</div>
+    <div class="bench-track">
+      <div class="bench-marker" id="benchMarker"></div>
+    </div>
+    <div class="bench-axis">
+      <span>0</span><span>60</span><span>70</span><span>80</span><span>90</span><span>100</span>
+    </div>
+
+    <div class="contrib-lbl">항목별 기여점수</div>
+    <div id="contribBars"></div>
+  </div>
+
+  <!-- Notes -->
+  <div class="notes-card">
+    <div class="notes-lbl">테이스팅 메모</div>
+    <textarea id="notes" placeholder="향형, 운미, 특이사항 등 자유 기록..."></textarea>
+  </div>
+
+  <button class="save-btn" onclick="saveImage()">이미지로 저장 (PNG)</button>
+  <div class="save-note">채점 결과 카드가 PNG 파일로 다운로드됩니다.</div>
+
+  <!-- Sources -->
+  <div class="src">
+    <div class="src-title">기준 출처</div>
+    <ul class="src-list">
+      <li>GB/T 23776-2018 茶叶感官审评方法 — 중국 국가표준 (5항목·가중치 체계)</li>
+      <li>GB/T 14487-2017 茶叶感官审评术语 — 세부항목 용어 정의</li>
+      <li>Liu et al. (2025) "Guidelines for Sensory Evaluation of Tea" — Wiley AgriFood (CTSEM·QDA 방법론)</li>
+      <li>PMC6342540 — "A Lexicon for Descriptive Sensory Evaluation of Blended Tea" (37속성 렉시콘)</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+const WEIGHTS = {
+  'oolong':       { 외형:0.15, 향기:0.35, 탕색:0.10, 자미:0.30, 엽저:0.10 },
+  'green-premium':{ 외형:0.30, 향기:0.25, 탕색:0.10, 자미:0.25, 엽저:0.10 },
+  'green-common': { 외형:0.20, 향기:0.30, 탕색:0.10, 자미:0.30, 엽저:0.10 },
+  'white':        { 외형:0.20, 향기:0.30, 탕색:0.10, 자미:0.30, 엽저:0.10 },
+  'yellow':       { 외형:0.30, 향기:0.20, 탕색:0.10, 자미:0.30, 엽저:0.10 },
+  'black-gf':     { 외형:0.30, 향기:0.25, 탕색:0.10, 자미:0.25, 엽저:0.10 },
+  'black-ctc':    { 외형:0.10, 향기:0.30, 탕색:0.15, 자미:0.35, 엽저:0.10 },
+  'dark':         { 외형:0.30, 향기:0.20, 탕색:0.10, 자미:0.25, 엽저:0.15 },
+};
+
+const CRITS = [
+  {
+    key:'외형', zh:'外形', badge:'건평', badgeClass:'badge-dry', color:'#5a8a5e',
+    subs:[
+      { key:'tendr',  label:'연도 嫩度',  hint:'싹·어린잎 함량, 아호(芽毫) 표출 여부' },
+      { key:'shape',  label:'조형 條形',  hint:'차 고유 형태 — 침형·편형·구형·조형 적합도' },
+      { key:'color',  label:'색택 色澤',  hint:'표면 색상·광택·윤기 (취록·묵록·오윤 등)' },
+      { key:'unif',   label:'균정도 整碎', hint:'크기·형태 균일성, 파편 비율' },
+      { key:'clean',  label:'정결도 淨度', hint:'이물질·잡물 혼입 여부' },
+    ]
+  },
+  {
+    key:'향기', zh:'香気', badge:'습평', badgeClass:'badge-wet', color:'#7a5a9a',
+    subs:[
+      { key:'type',   label:'향형 香型',  hint:'향의 종류 — 화향·과향·밀향·배화향·진향 등' },
+      { key:'intens', label:'강도 高低',  hint:'향의 세기 — 고향·농욱·청고·유아·청담' },
+      { key:'purity', label:'순도 純度',  hint:'잡내·이상취 부재 — 청기·민기·진기·일쇄기 등' },
+      { key:'persist',label:'지속성 長短', hint:'열향→온향→냉향 지속 여부, 냉향 잔향 강도' },
+    ]
+  },
+  {
+    key:'탕색', zh:'汤色', badge:'습평', badgeClass:'badge-wet', color:'#c89030',
+    subs:[
+      { key:'hue',    label:'색상 色相',   hint:'차종별 표준 탕색 — 녹차 황록, 홍차 홍량·홍염 등' },
+      { key:'bright', label:'명도 明亮度',  hint:'밝고 선명한 정도 — 명량(明亮)이 고품질 지표' },
+      { key:'clarity',label:'청철도 清澈度', hint:'투명성·탁도 — 혼탁·침전은 결점' },
+    ]
+  },
+  {
+    key:'자미', zh:'滋味', badge:'습평', badgeClass:'badge-wet', color:'#c04a3a',
+    subs:[
+      { key:'conc',   label:'농도 浓淡',   hint:'가용성 성분 농도 — 浓·醇厚·淡·水味(결점)' },
+      { key:'astri',  label:'수렴성 收斂性', hint:'폴리페놀 수축 감각 — 화산(化散) 속도·균형' },
+      { key:'sweet',  label:'감미 甘甜',   hint:'아미노산·당에 의한 단맛 — 회감(回甘) 포함' },
+      { key:'umami',  label:'선미 鮮味',   hint:'L-테아닌·글루탐산에 의한 감칠맛 — 생진(生津)' },
+      { key:'finish', label:'후미 回味',   hint:'삼킨 후 여운·운미 — 喉韵·岩韻·音韻 등' },
+    ]
+  },
+  {
+    key:'엽저', zh:'叶底', badge:'습평', badgeClass:'badge-wet', color:'#4a7a9a',
+    subs:[
+      { key:'unif2',  label:'균일성 均匀度', hint:'잎 크기·색·형의 균일성' },
+      { key:'lcol',   label:'색택 色澤',    hint:'녹차 연량(軟亮)·홍차 홍량 — 암잡(暗雜)은 결점' },
+      { key:'soft',   label:'연경도 軟硬度', hint:'부드러움·탄력 — 연량(軟亮)이 고품질 지표' },
+      { key:'integ',  label:'완정도 完整度', hint:'잎의 파손·절단 비율 — 아엽성타(완정) 고품질' },
+    ]
+  },
+];
+
+const GRADES = [
+  { min:90, label:'特级 / 우수', color:'#2d7a3a', desc:'명차급 · 최고 품질' },
+  { min:80, label:'一级 / 양호', color:'#5a9a42', desc:'상품 · 우량' },
+  { min:70, label:'二级 / 보통', color:'#c8a730', desc:'중품 · 일반 수준' },
+  { min:60, label:'三级 / 미흡', color:'#e07a30', desc:'하품 · 개선 필요' },
+  { min:0,  label:'等外 / 불량', color:'#c44b37', desc:'등외품 · 결점 다수' },
+];
+
+const SCALE_LABELS = ['', '불량', '미흡', '보통', '양호', '우수'];
+
+// State: scores[critKey][subKey] = 1~5
+const scores = {};
+CRITS.forEach(c => {
+  scores[c.key] = {};
+  c.subs.forEach(s => { scores[c.key][s.key] = 3; });
+});
+
+function getGrade(t) { return GRADES.find(g => t >= g.min); }
+
+function critAvg(key) {
+  const vals = Object.values(scores[key]);
+  return vals.reduce((a,b) => a+b, 0) / vals.length;
+}
+
+function calcTotal() {
+  const w = WEIGHTS[document.getElementById('teaType').value];
+  return CRITS.reduce((s,c) => s + critAvg(c.key) * 20 * w[c.key], 0);
+}
+
+function setScore(critKey, subKey, val) {
+  scores[critKey][subKey] = val;
+  // update buttons
+  const card = document.getElementById('card-' + critKey);
+  card.querySelectorAll(`.sb[data-crit="${critKey}"][data-sub="${subKey}"]`).forEach(btn => {
+    const v = parseInt(btn.dataset.v);
+    btn.classList.toggle('sel', v === val);
+    btn.style.background = v === val
+      ? CRITS.find(c=>c.key===critKey).color
+      : '';
+  });
+  const lbl = document.getElementById(`lbl-${critKey}-${subKey}`);
+  if (lbl) lbl.textContent = SCALE_LABELS[val];
+  updateAll();
+}
+
+function updateAll() {
+  const total = calcTotal();
+  const grade = getGrade(total);
+  const w = WEIGHTS[document.getElementById('teaType').value];
+
+  document.getElementById('hTotal').textContent = total.toFixed(1);
+  document.getElementById('rTotal').innerHTML = total.toFixed(1) + '<sub>/ 100</sub>';
+  document.getElementById('rGrade').textContent = grade.label;
+  document.getElementById('rGrade').style.background = grade.color;
+
+  document.getElementById('benchMarker').style.left = Math.min(100,total) + '%';
+  document.getElementById('benchMarker').style.borderColor = grade.color;
+
+  // weight note
+  const wNote = document.getElementById('weightNote');
+  wNote.innerHTML = CRITS.map(c =>
+    `<span class="wn-item"><span class="wn-dot" style="background:${c.color}"></span><b>${c.key}</b> ${(w[c.key]*100).toFixed(0)}%</span>`
+  ).join('');
+
+  // criterion averages in card headers
+  CRITS.forEach(c => {
+    const avg = critAvg(c.key);
+    const el = document.getElementById('avg-' + c.key);
+    if (el) {
+      el.textContent = avg.toFixed(1);
+      el.style.color = c.color;
+    }
+    const contrib = avg * 20 * w[c.key];
+    const cel = document.getElementById('contrib-txt-' + c.key);
+    if (cel) cel.innerHTML = `가중치 <b>${(w[c.key]*100).toFixed(0)}%</b> · 기여 <b>${contrib.toFixed(1)}점</b>`;
+  });
+
+  // contribution bars
+  const bars = document.getElementById('contribBars');
+  bars.innerHTML = CRITS.map(c => {
+    const avg = critAvg(c.key);
+    const contrib = avg * 20 * w[c.key];
+    const maxContrib = 5 * 20 * w[c.key];
+    const pct = (contrib / maxContrib) * 100;
+    return `
+      <div class="contrib-row">
+        <div class="cr-name">${c.key}</div>
+        <div class="cr-avg" style="color:${c.color}">${avg.toFixed(1)}/5</div>
+        <div class="cr-track"><div class="cr-fill" style="width:${pct}%;background:${c.color}"></div></div>
+        <div class="cr-val" style="color:${c.color}">${contrib.toFixed(1)}</div>
+      </div>`;
+  }).join('');
+}
+
+function buildCards() {
+  const container = document.getElementById('critCards');
+  container.innerHTML = CRITS.map(c => `
+    <div class="crit-card" id="card-${c.key}">
+      <div class="crit-head">
+        <div class="crit-head-left">
+          <div class="crit-stripe" style="background:${c.color}"></div>
+          <div>
+            <div class="crit-name">${c.key} <span class="crit-badge ${c.badgeClass}">${c.badge}</span></div>
+            <div class="crit-zh">${c.zh}</div>
+          </div>
+        </div>
+        <div class="crit-head-right">
+          <span class="crit-avg" id="avg-${c.key}">3.0</span>
+          <span class="crit-avg-of5"> / 5.0</span>
+          <div class="crit-contrib-txt" id="contrib-txt-${c.key}"></div>
+        </div>
+      </div>
+      <div class="sub-list">
+        ${c.subs.map(s => `
+          <div class="sub-item">
+            <div class="sub-info">
+              <div class="sub-name">${s.label}</div>
+              <div class="sub-hint">${s.hint}</div>
+            </div>
+            <div class="sub-btns">
+              ${[1,2,3,4,5].map(v => `
+                <button class="sb${scores[c.key][s.key]===v?' sel':''}"
+                  data-crit="${c.key}" data-sub="${s.key}" data-v="${v}"
+                  style="${scores[c.key][s.key]===v?'background:'+c.color+';color:white;border-color:transparent':''}"
+                  onclick="setScore('${c.key}','${s.key}',${v})">${v}</button>
+              `).join('')}
+              <span class="sb-label" id="lbl-${c.key}-${s.key}">${SCALE_LABELS[scores[c.key][s.key]]}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('evalDate').value = new Date().toISOString().slice(0,10);
+buildCards();
+updateAll();
+
+// ── Canvas export ────────────────────────────────────────────────────────────
+function saveImage() {
+  const w     = WEIGHTS[document.getElementById('teaType').value];
+  const total = calcTotal();
+  const grade = getGrade(total);
+  const teaName    = document.getElementById('teaName').value    || '(차 이름 미입력)';
+  const evaluator  = document.getElementById('evaluator').value  || '—';
+  const evalDate   = document.getElementById('evalDate').value   || '—';
+  const teaTypeStr = document.getElementById('teaType').selectedOptions[0].text;
+  const notes      = document.getElementById('notes').value;
+
+  const SC = 2, CW = 760;
+  // Compute canvas height dynamically
+  let CH = 80 + 70 + 20; // header + info + gap
+  CRITS.forEach(c => { CH += 58 + c.subs.length * 24 + 12; }); // per criterion
+  CH += 120 + (notes.trim() ? 80 : 0) + 40; // result + notes + footer
+  CH += 20;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = CW * SC;
+  canvas.height = CH * SC;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(SC, SC);
+
+  const F = "'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif";
+
+  // BG
+  ctx.fillStyle = '#faf8f3';
+  ctx.fillRect(0, 0, CW, CH);
+
+  // Header
+  ctx.fillStyle = '#1e2e20';
+  rr(ctx, 0, 0, CW, 76, 0); ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.font = `bold 19px ${F}`;
+  ctx.fillText('차(茶) 관능평가 채점 시트', 26, 34);
+  ctx.font = `11px ${F}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(`GB/T 23776-2018  ·  ${teaTypeStr}  ·  ${evalDate}`, 26, 54);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'white';
+  ctx.font = `bold 34px ${F}`;
+  ctx.fillText(total.toFixed(1), CW-26, 50);
+  ctx.font = `11px ${F}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText('/ 100점', CW-26, 66);
+  ctx.textAlign = 'left';
+
+  // Info box
+  let y = 90;
+  ctx.fillStyle = '#fff'; rr(ctx, 18, y, CW-36, 58, 10); ctx.fill();
+  ctx.strokeStyle = '#e8e2d9'; ctx.lineWidth = 1;
+  rr(ctx, 18, y, CW-36, 58, 10); ctx.stroke();
+  ctx.font = `10px ${F}`; ctx.fillStyle = '#9a9088';
+  ctx.fillText('차 이름', 32, y+15);
+  ctx.fillText('평가자', 310, y+15);
+  ctx.fillText('차 종류', 32, y+43);
+  ctx.fillText('평가 일자', 310, y+43);
+  ctx.font = `bold 12px ${F}`; ctx.fillStyle = '#2c2c2c';
+  ctx.fillText(teaName,    80, y+15);
+  ctx.fillText(evaluator,  360, y+15);
+  ctx.fillText(teaTypeStr, 80, y+43);
+  ctx.fillText(evalDate,   380, y+43);
+
+  y += 68;
+
+  // Criterion sections
+  CRITS.forEach(c => {
+    const avg    = critAvg(c.key);
+    const contrib = avg * 20 * w[c.key];
+    const secH   = 54 + c.subs.length * 24 + 10;
+
+    ctx.fillStyle = '#fff';
+    rr(ctx, 18, y, CW-36, secH, 10); ctx.fill();
+    ctx.strokeStyle = '#e8e2d9'; ctx.lineWidth = 1;
+    rr(ctx, 18, y, CW-36, secH, 10); ctx.stroke();
+
+    // stripe
+    ctx.fillStyle = c.color;
+    rr(ctx, 18, y, 4, secH, 2); ctx.fill();
+
+    // criterion header
+    ctx.font = `bold 14px ${F}`; ctx.fillStyle = '#2c2c2c';
+    ctx.fillText(`${c.key}  ${c.zh}`, 32, y+20);
+    ctx.font = `10px ${F}`; ctx.fillStyle = '#9a9088';
+    ctx.fillText(`${c.badge} / 가중치 ${(w[c.key]*100).toFixed(0)}%`, 32, y+36);
+
+    // avg score
+    ctx.textAlign = 'right';
+    ctx.font = `bold 22px ${F}`; ctx.fillStyle = c.color;
+    ctx.fillText(avg.toFixed(1), CW-30, y+24);
+    ctx.font = `10px ${F}`; ctx.fillStyle = '#9a9088';
+    ctx.fillText(`/5  →  ${contrib.toFixed(1)}점`, CW-30, y+38);
+    ctx.textAlign = 'left';
+
+    // divider
+    ctx.strokeStyle = '#f0ece6'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(30, y+46); ctx.lineTo(CW-30, y+46); ctx.stroke();
+
+    // sub-items
+    let sy = y + 58;
+    c.subs.forEach(s => {
+      const sv = scores[c.key][s.key];
+      ctx.font = `11px ${F}`; ctx.fillStyle = '#2c2c2c';
+      ctx.fillText(s.label, 34, sy);
+
+      // mini score dots
+      for (let i=1; i<=5; i++) {
+        ctx.fillStyle = i <= sv ? c.color : '#e0dbd4';
+        rr(ctx, 200 + (i-1)*18, sy-10, 13, 13, 3); ctx.fill();
+        if (i <= sv) {
+          ctx.font = `bold 9px ${F}`; ctx.fillStyle = 'white';
+          ctx.textAlign = 'center';
+          ctx.fillText(i, 206 + (i-1)*18, sy-1);
+          ctx.textAlign = 'left';
+        }
+      }
+      ctx.font = `10px ${F}`; ctx.fillStyle = c.color;
+      ctx.fillText(SCALE_LABELS[sv], 298, sy);
+      sy += 24;
+    });
+
+    y += secH + 8;
+  });
+
+  // Total box
+  ctx.fillStyle = '#fff';
+  rr(ctx, 18, y, CW-36, 80, 10); ctx.fill();
+  ctx.strokeStyle = '#e8e2d9'; ctx.lineWidth = 1;
+  rr(ctx, 18, y, CW-36, 80, 10); ctx.stroke();
+
+  ctx.fillStyle = grade.color;
+  rr(ctx, CW-170, y+18, 140, 30, 15); ctx.fill();
+  ctx.font = `bold 12px ${F}`; ctx.fillStyle = 'white';
+  ctx.textAlign = 'center'; ctx.fillText(grade.label, CW-100, y+38); ctx.textAlign = 'left';
+
+  ctx.font = `10px ${F}`; ctx.fillStyle = '#9a9088';
+  ctx.fillText('가중 총점', 34, y+26);
+  ctx.font = `bold 36px ${F}`; ctx.fillStyle = '#4a7a52';
+  ctx.fillText(total.toFixed(1), 34, y+64);
+  ctx.font = `12px ${F}`; ctx.fillStyle = '#9a9088';
+  ctx.fillText('/ 100', 34 + ctx.measureText(total.toFixed(1)).width + 4, y+64);
+
+  y += 90;
+
+  // Benchmark bar
+  const bx = 26, bw = CW-52;
+  ctx.font = `10px ${F}`; ctx.fillStyle = '#9a9088';
+  ctx.fillText('품질 기준 비교', bx, y);
+  y += 12;
+  const bg = ctx.createLinearGradient(bx,0,bx+bw,0);
+  bg.addColorStop(0,'#c44b37'); bg.addColorStop(0.4,'#e07a30');
+  bg.addColorStop(0.55,'#c8a730'); bg.addColorStop(0.7,'#7ab64a'); bg.addColorStop(1,'#2d7a3a');
+  ctx.fillStyle = bg; rr(ctx, bx, y, bw, 10, 5); ctx.fill();
+  const mx = bx + (total/100)*bw;
+  ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(mx, y+5, 8, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = grade.color; ctx.lineWidth = 2.5; ctx.stroke();
+  y += 18;
+  ctx.font = `9px ${F}`; ctx.fillStyle = '#a09888';
+  ['0','60','70','80','90','100'].forEach((l,i) => {
+    const ps = [0,0.6,0.7,0.8,0.9,1.0];
+    ctx.textAlign = 'center';
+    ctx.fillText(l, bx+ps[i]*bw, y);
+  });
+  ctx.textAlign = 'left';
+
+  y += 16;
+
+  // Notes
+  if (notes.trim()) {
+    ctx.font = `10px ${F}`; ctx.fillStyle = '#9a9088';
+    ctx.fillText('테이스팅 메모', 26, y+4);
+    y += 14;
+    ctx.fillStyle = '#fff'; rr(ctx, 18, y, CW-36, 56, 8); ctx.fill();
+    ctx.strokeStyle = '#e8e2d9'; ctx.lineWidth = 1;
+    rr(ctx, 18, y, CW-36, 56, 8); ctx.stroke();
+    ctx.font = `11px ${F}`; ctx.fillStyle = '#2c2c2c';
+    wrapText(ctx, notes, CW-76).slice(0,3).forEach((line,i) => ctx.fillText(line, 30, y+18+i*15));
+    y += 66;
+  }
+
+  // Footer
+  ctx.font = `9px ${F}`; ctx.fillStyle = '#c0b8b0';
+  ctx.textAlign = 'center';
+  ctx.fillText('출처: GB/T 23776-2018  ·  Liu et al. (2025) Wiley AgriFood  ·  PMC6342540', CW/2, CH-12);
+
+  const safe = (teaName+'_'+evalDate).replace(/[^a-zA-Z0-9가-힣_\-]/g,'_').slice(0,40);
+  const link = document.createElement('a');
+  link.download = `차관능평가_${safe}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, maxW) {
+  const lines = [];
+  let line = '';
+  for (const ch of text) {
+    if (ctx.measureText(line+ch).width > maxW && line) { lines.push(line); line = ch; }
+    else line += ch;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+</script>
+</body>
+</html>
