@@ -442,6 +442,17 @@ function buildWheel() {
         class="outer-seg" data-sub="${sub.id}" data-cat="${cat.id}"
         data-intensity="${intensity}"
         style="cursor:pointer;transition:opacity .25s"/>`;
+      // 바깥 링 라벨 — 안쪽 링과 동일한 회전 공식, 폰트 크기만 작게
+      const subMidA = subA + subSpan / 2;
+      const outerMidR = (RO1 + RO2) / 2;  // 145
+      const outerRot = (subMidA >= 90 && subMidA < 270) ? subMidA + 180 : subMidA;
+      const outerTr  = (subMidA >= 90 && subMidA < 270) ? outerMidR : -outerMidR;
+      const labelFill   = intensity >= 1 ? 'white' : cat.color;
+      const labelWeight = intensity >= 1 ? '600' : '400';
+      html += `<text transform="rotate(${outerRot}) translate(0,${outerTr})"
+        text-anchor="middle" dominant-baseline="middle"
+        fill="${labelFill}" font-size="7" font-weight="${labelWeight}"
+        style="pointer-events:none">${sub.label}</text>`;
       subA = subEnd;
     });
 
