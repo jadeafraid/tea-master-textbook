@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>자사호 니료 × 차 궁합 매칭</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;600&display=swap');
+
+:root {
+  --bg: #f9f6f0;
+  --surface: #ffffff;
+  --border: #e0d5c8;
+  --text: #1a1510;
+  --text-muted: #7a6e64;
+  --accent: #7a3b2e;
+  --accent-light: #f5eae5;
+  --good: #2d5a3d;
+  --good-bg: #eaf3ed;
+  --bad: #8b2828;
+  --bad-bg: #f8e8e8;
+  --warn: #6b5000;
+  --warn-bg: #fdf4dc;
+  --tab-active: #7a3b2e;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 헤더 ── */
+header {
+  background: var(--accent);
+  color: #fff;
+  padding: 28px 24px 20px;
+  text-align: center;
+}
+header h1 {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
+header p {
+  font-size: 13px;
+  opacity: 0.82;
+  font-weight: 300;
+}
+
+/* ── 탭 ── */
+.tab-bar {
+  display: flex;
+  background: #fff;
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.tab-btn {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+.tab-btn.active {
+  color: var(--tab-active);
+  border-bottom-color: var(--tab-active);
+  background: var(--accent-light);
+}
+.tab-btn:hover:not(.active) {
+  background: #f5f0ec;
+  color: var(--text);
+}
+
+/* ── 메인 콘텐츠 ── */
+main {
+  flex: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px 16px 40px;
+}
+
+/* ── 패널 ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── 선택 그리드 ── */
+.select-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.chip {
+  padding: 8px 16px;
+  border-radius: 24px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  transition: all 0.18s;
+  user-select: none;
+}
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+.chip.selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.chip .sub {
+  font-size: 11px;
+  font-weight: 300;
+  opacity: 0.85;
+  margin-left: 4px;
+}
+
+/* ── 결과 카드 ── */
+.result-area {
+  animation: fadeIn 0.25s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.result-header h2 {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  letter-spacing: 0.04em;
+}
+.badge-clay { background: #f0e6dc; color: #7a3b2e; }
+.badge-tea  { background: #e2edda; color: #2d5a3d; }
+
+.principle-box {
+  background: var(--warn-bg);
+  border: 1px solid #d4b060;
+  border-left: 4px solid #d4b060;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--warn);
+  margin-bottom: 22px;
+  line-height: 1.7;
+}
+.principle-box strong { font-weight: 700; }
+
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-title.good { color: var(--good); }
+.section-title.bad  { color: var(--bad); }
+
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-good { background: var(--good); }
+.dot-bad  { background: var(--bad); }
+
+.match-list {
+  list-style: none;
+  margin-bottom: 22px;
+}
+.match-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+.match-item.good-item {
+  background: var(--good-bg);
+  border: 1px solid #b4d8bf;
+}
+.match-item.bad-item {
+  background: var(--bad-bg);
+  border: 1px solid #e0b4b4;
+}
+.match-item-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.match-item-name {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.match-item.good-item .match-item-name { color: var(--good); }
+.match-item.bad-item  .match-item-name { color: var(--bad); }
+.match-item-reason {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.footnote-ref {
+  font-size: 10px;
+  vertical-align: super;
+  color: var(--accent);
+  font-weight: 700;
+  margin-left: 1px;
+  cursor: default;
+}
+
+/* 니료 설명 블록 */
+.clay-desc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin-bottom: 22px;
+}
+.clay-desc strong { color: var(--text); font-weight: 600; }
+
+/* 온도 배지 */
+.temp-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #ede9e0;
+  color: #5a4a30;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* 빈 상태 */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.empty-state .icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+/* ── 각주 ── */
+.footnotes {
+  margin-top: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.85;
+}
+.footnotes h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+.footnotes ol { padding-left: 18px; }
+.footnotes li { margin-bottom: 4px; }
+
+/* ── 푸터 ── */
+footer {
+  background: #f0ebe3;
+  border-top: 1px solid var(--border);
+  padding: 14px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>자사호 × 차 궁합 매칭</h1>
+  <p>紫砂壺 니료별 최적 차종 가이드 — 니료 또는 차 종류로 탐색</p>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('clay')">니료로 찾기</button>
+  <button class="tab-btn" onclick="switchTab('tea')">차 종류로 찾기</button>
+</div>
+
+<main>
+
+  <!-- ── 니료 → 차 패널 ── -->
+  <div id="panel-clay" class="panel active">
+    <div class="select-label">니료 선택</div>
+    <div class="chip-grid" id="clay-chips"></div>
+    <div id="clay-result">
+      <div class="empty-state">
+        <div class="icon">🫖</div>
+        위에서 니료를 선택하세요
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 차 → 니료 패널 ── -->
+  <div id="panel-tea" class="panel">
+    <div class="select-label">차 종류 선택</div>
+    <div class="chip-grid" id="tea-chips"></div>
+    <div id="tea-result">
+      <div class="empty-state">
+        <div class="icon">🍃</div>
+        위에서 차 종류를 선택하세요
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  해당 내용은 재미로만 보세요 — 궁합은 전통적 경험칙이며, 개인 취향과 다를 수 있습니다.
+</footer>
+
+<script>
+// ────────────────────────────────────────────────
+// 데이터
+// ────────────────────────────────────────────────
+
+const CLAYS = [
+  {
+    id: 'zini',
+    name: '자니 / 청수니',
+    sub: '紫泥 / 清水泥',
+    desc: '자사 니료의 가장 대표적 계열. <strong>이중기공(double-pore) 구조</strong>로 보온성과 통기성을 동시에 구현. 소성 후 자적색~자갈색. 포양이 잘 되어 장기 사용 시 광택이 깊어짐.',
+    tempTag: '1,150~1,180°C',
+    good: [
+      { name: '보이차 숙차', reason: '이중기공의 통기성이 발효취를 날리면서 깊은 맛을 살림. 물에 바디감을 부여해 무거운 차의 두께감을 증폭.', fn: [1,2] },
+      { name: '보이 노차', reason: '보온성이 오래된 차엽의 완만한 추출에 유리하며, 포양 후 자갈색으로 변하는 미감이 노차와 조화를 이룸.', fn: [1] },
+      { name: '홍차', reason: '발효된 찻잎의 두터운 단맛과 자니의 바디감이 잘 맞아 풍미를 증폭시킴.', fn: [2] },
+      { name: '흑차', reason: '흑차 특유의 묵직하고 진한 탕색을 자니의 보온성이 뒷받침함.', fn: [1] },
+      { name: '무이암차', reason: '암운(岩韻)의 무거운 미네랄 풍미를 자니의 통기성이 균형 있게 조율.', fn: [2] },
+    ],
+    bad: [
+      { name: '녹차', reason: '자니의 보온성이 섬세한 녹차 향을 과하게 누를 수 있음. 개완이나 단니호가 더 적합.', fn: [1] },
+      { name: '백차', reason: '가볍고 섬세한 향이 기공에 흡착되어 손실됨. 밀도 낮은 니료를 권장.', fn: [1] },
+    ],
+  },
+  {
+    id: 'dicaoqing',
+    name: '저조청',
+    sub: '底槽清',
+    desc: '황룡산 광맥 <strong>최하부층에서만 채굴</strong>되는 최고급 니료. 원광에 청록색 반점(계안 鷄眼)이 고르게 분포하는 것이 진품의 필수 조건. 소성 후 자적색 바탕에 금모래가 은은히 보임. 수백 년간 명품 자사호의 주원료.',
+    tempTag: '1,160~1,200°C',
+    good: [
+      { name: '생보이 고수차', reason: '니료의 희소 가치와 고수차의 희소 가치가 상응. 포양 후 금황색 윤기가 점점 깊어지는 감상 포인트.', fn: [1,3] },
+      { name: '무이암차 최상급', reason: '저조청의 세밀한 기공이 암차 특유의 암운을 섬세하게 끌어올림.', fn: [2,3] },
+      { name: '고급 우롱차', reason: '최상급 니료에는 최상급 차를 매칭하는 것이 기본 원칙.', fn: [1] },
+    ],
+    bad: [
+      { name: '저급 차류 일반', reason: '니료의 특성을 차가 따라오지 못함. 저조청 호는 최상급 차 전용으로 사용 권장.', fn: [3] },
+    ],
+  },
+  {
+    id: 'zhuni',
+    name: '주니',
+    sub: '朱泥',
+    desc: '철분 함량 <strong>14~18%</strong> — 자사 니료 중 최고치. 소성 후 선홍색. 밀도가 높고 기공이 작아 향기 성분을 호 안에 가두는 능력이 탁월. 수축률 17~25%로 파손율이 높아 숙련된 장인만 제작 가능. 소형 호(80~150cc) 위주.',
+    tempTag: '1,100~1,160°C',
+    good: [
+      { name: '철관음 (청향형 / 농향형)', reason: '밀도 높은 기공이 철관음의 화려한 향기를 호 내부에 가두어 향을 증폭. 장기 사용 시 청수만으로도 향이 우러남.', fn: [1,2] },
+      { name: '고산차 (대만 우롱)', reason: '고산의 섬세한 꽃 향을 잃지 않고 집약적으로 표현하기에 주니의 밀도가 최적.', fn: [2] },
+      { name: '동정오룡', reason: '경발효 우롱의 밝은 향기를 소용량 주니호로 진하게 추출 가능.', fn: [1] },
+      { name: '향기형 홍차', reason: '기문홍차 등 향기 중심 홍차의 꽃 향을 가두는 데 유리.', fn: [2] },
+    ],
+    bad: [
+      { name: '보이숙차', reason: '이전 발효취가 주니 기공에 흡착되어 이후 우롱차에 혼향(混香) 유발. 한 호 한 차 원칙 엄수.', fn: [1,4] },
+      { name: '흑차', reason: '짙고 무거운 향이 주니의 섬세한 기공에 오래 남아 다른 차에 영향.', fn: [1] },
+    ],
+  },
+  {
+    id: 'hongni',
+    name: '홍니',
+    sub: '紅泥',
+    desc: '원광은 연회색 단단한 암석. 소성 후 붉은색을 띠며 광택이 있음. 무이암차의 "건조한 떫은맛(乾澀感)"을 잡아주고 암운(岩韻)을 끌어올리는 것으로 전통 다인들 사이에서 알려져 있음.',
+    tempTag: '1,080°C 내외',
+    good: [
+      { name: '무이암차 (대홍포·육계·수선)', reason: '홍니의 광물 조성이 암차의 미네랄 풍미와 공명한다는 전통적 견해. 건조함을 부드럽게 잡아줌.', fn: [2,3] },
+      { name: '봉황단총', reason: '단총의 밀랍 향과 강한 개성을 홍니가 잘 수용. 소형~중형 홍니호가 적합.', fn: [2] },
+    ],
+    bad: [
+      { name: '녹차 / 백차', reason: '홍니의 소성 온도가 낮아 보온성이 강해지는 경향. 저온 우림이 필요한 녹차·백차에는 불리.', fn: [1] },
+    ],
+  },
+  {
+    id: 'duanni',
+    name: '단니 / 황금단',
+    sub: '段泥 / 黃金段',
+    desc: '자니와 녹니가 광산에서 자연 혼합된 니료. "골이 많고 살이 적다(骨多肉少)" — 입자감이 자사 중 가장 뚜렷. 밀도가 낮고 기공이 크고 풍부해 <strong>통기성 최고</strong>. 포양 후 색상 변화가 가장 아름답고 뚜렷. 온도 변화 내성 강함.',
+    tempTag: '1,170~1,200°C',
+    good: [
+      { name: '녹차', reason: '통기성이 높아 섬세한 녹차 향을 보존하면서 깔끔하게 우림. 온도 변화에 강해 낮은 온도 우림에도 안정적.', fn: [1,2] },
+      { name: '생보이차', reason: '수년 포양 후 금황색이 점점 윤기 있게 변하는 것이 감상 포인트. 생차의 청향과 어울림.', fn: [1] },
+      { name: '백차', reason: '섬세한 솜털 향과 은은한 달콤함을 기공이 손상 없이 통과시킴.', fn: [2] },
+      { name: '황차', reason: '약발효의 부드러운 향기를 그대로 살려내는 데 밝은 단니가 적합.', fn: [1] },
+      { name: '철관음 (청향형)', reason: '청향 철관음의 밝고 화사한 향을 단니의 개방적 기공이 잘 표현.', fn: [2] },
+    ],
+    bad: [
+      { name: '보이숙차 / 흑차', reason: '짙은 색 차를 지속 사용하면 밝은 단니 표면에 얼룩이 생겨 감상 가치가 훼손됨.', fn: [1,4] },
+    ],
+  },
+  {
+    id: 'lvni',
+    name: '본산녹니',
+    sub: '本山綠泥',
+    desc: '"니 중의 니(泥中泥)". 자사 광맥 속 자니 사이에 끼여 산출. 자사 중 산량이 가장 적어 희소성 높음. 소성 후 배껍질색(米黃色). 온도에 따라 미황색~청동색까지 다양하게 변함.',
+    tempTag: '1,170~1,250°C',
+    good: [
+      { name: '녹차', reason: '밝은 니료 특성상 녹차의 청아한 향기와 시각적으로도 잘 어울리며, 통기성이 섬세한 향 보존에 유리.', fn: [1] },
+      { name: '황차', reason: '황차의 옅은 황록색 탕색과 녹니의 미황색이 시각적으로 조화를 이룸.', fn: [1] },
+      { name: '백차', reason: '희소한 백차와 희소한 니료의 조합. 청아하고 섬세한 풍미를 그대로 전달.', fn: [1] },
+      { name: '청향형 우롱차', reason: '가볍고 화사한 향기를 손상 없이 표현하는 데 적합.', fn: [2] },
+    ],
+    bad: [
+      { name: '짙은 발효차 전반', reason: '보이숙차·흑차 등 짙은 색과 강한 향의 차는 연한 니료 표면에 영구 얼룩을 남김. 절대 피할 것.', fn: [1,4] },
+    ],
+  },
+];
+
+const TEAS = [
+  {
+    id: 'green',
+    name: '녹차',
+    sub: '綠茶',
+    good: ['단니 / 황금단', '본산녹니'],
+    goodReasons: [
+      '통기성이 높아 섬세한 향 보존. 온도 변화 내성 강해 낮은 온도(70~80°C) 우림에 안정적.',
+      '밝은 니료 특성으로 녹차와 시각적·풍미적 조화. 청아한 향기 손상 없이 전달.',
+    ],
+    bad: ['자니 / 청수니', '홍니'],
+    badReasons: [
+      '보온성이 강해 섬세한 녹차 향을 과하게 누를 수 있음. 개완 사용이 더 권장됨.',
+      '소성 온도 특성상 보온성이 높아 고온에 민감한 녹차 우림에 불리.',
+    ],
+    fn: [1,2],
+  },
+  {
+    id: 'white',
+    name: '백차',
+    sub: '白茶',
+    good: ['단니 / 황금단', '본산녹니'],
+    goodReasons: [
+      '기공이 크고 개방적이어서 백차의 솜털 향과 은은한 단맛을 손상 없이 통과시킴.',
+      '연하고 희소한 니료와 섬세한 백차의 조합. 청아한 풍미를 그대로 전달.',
+    ],
+    bad: ['자니 / 청수니', '홍니'],
+    badReasons: [
+      '기공에 흡착력이 강해 백차의 가벼운 향기 성분을 불필요하게 흡수할 수 있음.',
+      '보온성이 높아 백차 특유의 섬세한 향기가 손실됨.',
+    ],
+    fn: [1,2],
+  },
+  {
+    id: 'yellow',
+    name: '황차',
+    sub: '黃茶',
+    good: ['단니 / 황금단', '본산녹니'],
+    goodReasons: [
+      '약발효의 부드러운 향기를 기공이 손상 없이 살려냄. 황금빛 탕색과 단니의 황금색이 시각적 조화.',
+      '황차의 옅은 황록색 탕색과 본산녹니의 미황색이 색감으로도 어울림.',
+    ],
+    bad: ['주니'],
+    badReasons: [
+      '주니의 과도한 향 집약 능력이 황차의 섬세한 발효 풍미를 변질시킬 수 있음.',
+    ],
+    fn: [1],
+  },
+  {
+    id: 'oolong-light',
+    name: '철관음 / 청향 우롱',
+    sub: '輕發酵 烏龍茶',
+    good: ['주니', '단니 / 황금단'],
+    goodReasons: [
+      '밀도 높은 기공이 철관음의 화려한 꽃 향을 호 내에 집약. 장기 사용 시 청수만으로도 향이 우러남.',
+      '청향형 우롱의 밝고 화사한 향을 개방적 기공이 손상 없이 표현.',
+    ],
+    bad: ['자니 / 청수니'],
+    badReasons: [
+      '보온성이 과해 청향 우롱의 섬세한 향기를 과도하게 누를 수 있음.',
+    ],
+    fn: [1,2],
+  },
+  {
+    id: 'oolong-high',
+    name: '고산차 / 동정오룡',
+    sub: '高山茶 / 凍頂烏龍',
+    good: ['주니'],
+    goodReasons: [
+      '고산의 섬세한 꽃 향을 잃지 않고 집약적으로 표현. 소용량(80~150cc) 주니호로 진하게 추출.',
+    ],
+    bad: ['자니 / 청수니'],
+    badReasons: [
+      '묵직한 보온성이 고산차의 섬세한 향기 층위를 압도할 수 있음.',
+    ],
+    fn: [2],
+  },
+  {
+    id: 'rock',
+    name: '무이암차',
+    sub: '武夷岩茶 (大紅袍·肉桂·水仙)',
+    good: ['홍니', '자니 / 청수니', '저조청'],
+    goodReasons: [
+      '홍니의 광물 조성이 암운(岩韻)과 공명하며 건조한 떫은맛(乾澀感)을 부드럽게 조율.',
+      '이중기공의 통기성이 발효취를 날리면서 암차의 깊은 맛을 균형 있게 살림.',
+      '최상급 암차에는 저조청의 세밀한 기공이 암운을 섬세하게 끌어올림.',
+    ],
+    bad: ['단니 / 황금단', '본산녹니'],
+    badReasons: [
+      '짙은 색과 강한 향이 밝은 단니 표면에 얼룩을 남김.',
+      '가장 연한 니료에 암차의 강한 향이 흡착되면 이후 차에 혼향 유발.',
+    ],
+    fn: [2,3],
+  },
+  {
+    id: 'dancong',
+    name: '봉황단총',
+    sub: '鳳凰單叢',
+    good: ['홍니', '주니'],
+    goodReasons: [
+      '단총의 강한 개성과 밀랍 향을 홍니가 잘 수용하고 보완.',
+      '밀도 높은 주니가 단총의 복합 향기를 호 내에 집약적으로 표현.',
+    ],
+    bad: ['단니 / 황금단', '본산녹니'],
+    badReasons: [
+      '단총의 진한 색과 향이 밝은 니료 표면에 얼룩 유발.',
+      '희소한 밝은 니료를 단총의 강한 향기가 장기적으로 오염.',
+    ],
+    fn: [2],
+  },
+  {
+    id: 'black',
+    name: '홍차',
+    sub: '紅茶',
+    good: ['자니 / 청수니', '주니 (향기형)'],
+    goodReasons: [
+      '발효된 찻잎의 단맛·바디감과 자니의 보온성이 잘 맞아 풍미를 증폭.',
+      '기문홍차 등 향기 중심 홍차에는 주니의 향 집약 능력이 유리.',
+    ],
+    bad: ['단니 / 황금단', '본산녹니'],
+    badReasons: [
+      '홍차 특유의 짙은 적갈색 탕색이 밝은 니료 표면에 착색됨.',
+      '가장 연하고 귀한 니료에 홍차의 타닌이 흡착되어 오염 위험.',
+    ],
+    fn: [1,2],
+  },
+  {
+    id: 'sheng',
+    name: '생보이차',
+    sub: '生普洱茶',
+    good: ['단니 / 황금단', '저조청'],
+    goodReasons: [
+      '수년 포양 후 금황색이 점점 윤기 있게 변하는 것이 감상 포인트. 통기성이 생차의 청향을 살림.',
+      '최고급 생보이(고수차)에는 저조청이 기본 매칭.',
+    ],
+    bad: ['본산녹니'],
+    badReasons: [
+      '생보이의 세월이 지남에 따라 짙어지는 탕색이 연한 니료에 얼룩을 남길 수 있음.',
+    ],
+    fn: [1],
+  },
+  {
+    id: 'shou',
+    name: '보이차 숙차 / 노차',
+    sub: '熟普洱 / 老茶',
+    good: ['자니 / 청수니'],
+    goodReasons: [
+      '이중기공이 발효취를 날리고 깊은 맛을 살림. 보온성이 오래된 차엽의 완만한 추출에 유리.',
+    ],
+    bad: ['주니', '단니 / 황금단', '본산녹니'],
+    badReasons: [
+      '발효취가 주니 기공에 흡착되어 이후 우롱차 사용 시 혼향 유발.',
+      '짙은 색과 강한 발효향이 단니 표면에 영구 얼룩 유발.',
+      '가장 연한 니료에 숙차의 강한 발효향이 오염. 절대 피할 것.',
+    ],
+    fn: [1,4],
+  },
+  {
+    id: 'heicha',
+    name: '흑차',
+    sub: '黑茶 (六堡茶 등)',
+    good: ['자니 / 청수니'],
+    goodReasons: [
+      '흑차 특유의 묵직하고 진한 탕색을 자니의 보온성이 뒷받침하며 깊은 풍미를 끌어냄.',
+    ],
+    bad: ['주니', '단니 / 황금단', '본산녹니'],
+    badReasons: [
+      '흑차의 강하고 무거운 향이 주니의 섬세한 기공에 오래 남아 다른 차에 영향.',
+      '짙은 흑차 탕색이 밝은 단니 표면에 영구 착색됨.',
+      '가장 연한 니료에 흑차의 짙은 색과 향이 흡착 오염.',
+    ],
+    fn: [1],
+  },
+];
+
+// ────────────────────────────────────────────────
+// 각주
+// ────────────────────────────────────────────────
+const FOOTNOTES = [
+  '徐秀棠·山谷, 《中國紫砂》, 上海古籍出版社, 1994. — 니료 분류 및 차종 궁합 전반',
+  '중국 의흥자사공예사(宜興紫砂工藝廠) 기술 표준 및 장인 전승 구술 자료. 다수 자사 전문 서적에서 재인용.',
+  '周桂珍 外, 《紫砂名壺》, 上海人民美術出版社. — 저조청 및 고급 니료 특성',
+  '周高起, 《陽羨茗壺系》(1644년경). 일호일차(一壺一茶) 원칙의 고전 근거.',
+];
+
+// ────────────────────────────────────────────────
+// 렌더링
+// ────────────────────────────────────────────────
+
+function renderFootnotes(fnIndices) {
+  if (!fnIndices || !fnIndices.length) return '';
+  const refs = fnIndices.map(i => `<span class="footnote-ref" title="${FOOTNOTES[i-1]}">[${i}]</span>`).join('');
+  return refs;
+}
+
+function buildFootnoteSection() {
+  return `<div class="footnotes">
+    <h3>참고 출처</h3>
+    <ol>
+      ${FOOTNOTES.map(f => `<li>${f}</li>`).join('')}
+    </ol>
+  </div>`;
+}
+
+// 니료 칩 생성
+const clayChips = document.getElementById('clay-chips');
+CLAYS.forEach(c => {
+  const btn = document.createElement('button');
+  btn.className = 'chip';
+  btn.dataset.id = c.id;
+  btn.innerHTML = `${c.name}<span class="sub">${c.sub}</span>`;
+  btn.onclick = () => selectClay(c.id, btn);
+  clayChips.appendChild(btn);
+});
+
+// 차 칩 생성
+const teaChips = document.getElementById('tea-chips');
+TEAS.forEach(t => {
+  const btn = document.createElement('button');
+  btn.className = 'chip';
+  btn.dataset.id = t.id;
+  btn.innerHTML = `${t.name}<span class="sub">${t.sub}</span>`;
+  btn.onclick = () => selectTea(t.id, btn);
+  teaChips.appendChild(btn);
+});
+
+function selectClay(id, btn) {
+  document.querySelectorAll('#clay-chips .chip').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  const clay = CLAYS.find(c => c.id === id);
+  renderClayResult(clay);
+}
+
+function renderClayResult(clay) {
+  const goodItems = clay.good.map(g => `
+    <li class="match-item good-item">
+      <span class="match-item-icon">✓</span>
+      <div>
+        <div class="match-item-name">${g.name}${renderFootnotes(g.fn)}</div>
+        <div class="match-item-reason">${g.reason}</div>
+      </div>
+    </li>`).join('');
+
+  const badItems = clay.bad.map(b => `
+    <li class="match-item bad-item">
+      <span class="match-item-icon">✗</span>
+      <div>
+        <div class="match-item-name">${b.name}${renderFootnotes(b.fn)}</div>
+        <div class="match-item-reason">${b.reason}</div>
+      </div>
+    </li>`).join('');
+
+  document.getElementById('clay-result').innerHTML = `
+    <div class="result-area">
+      <div class="result-header">
+        <h2>${clay.name}</h2>
+        <span class="badge badge-clay">${clay.sub}</span>
+        <span class="temp-tag">${clay.tempTag}</span>
+      </div>
+      <div class="clay-desc">${clay.desc}</div>
+      <div class="principle-box">
+        <strong>一壺一茶 (일호일차)</strong> — 자사호는 이중기공 구조로 장기 사용 시 차 성분이 흡착됩니다. 다른 종류의 차를 섞어 쓰면 혼향(混香) 문제가 생기므로, 한 호에 한 종류의 차만 사용하는 것이 원칙입니다.<sup class="footnote-ref" title="${FOOTNOTES[3]}">[4]</sup>
+      </div>
+      <div class="section-title good"><span class="dot dot-good"></span>어울리는 차</div>
+      <ul class="match-list">${goodItems}</ul>
+      <div class="section-title bad"><span class="dot dot-bad"></span>피해야 할 차</div>
+      <ul class="match-list">${badItems}</ul>
+      ${buildFootnoteSection()}
+    </div>`;
+}
+
+function selectTea(id, btn) {
+  document.querySelectorAll('#tea-chips .chip').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  const tea = TEAS.find(t => t.id === id);
+  renderTeaResult(tea);
+}
+
+function renderTeaResult(tea) {
+  const goodItems = tea.good.map((name, i) => `
+    <li class="match-item good-item">
+      <span class="match-item-icon">✓</span>
+      <div>
+        <div class="match-item-name">${name}${renderFootnotes(tea.fn)}</div>
+        <div class="match-item-reason">${tea.goodReasons[i] || ''}</div>
+      </div>
+    </li>`).join('');
+
+  const badItems = tea.bad.map((name, i) => `
+    <li class="match-item bad-item">
+      <span class="match-item-icon">✗</span>
+      <div>
+        <div class="match-item-name">${name}${renderFootnotes(tea.fn)}</div>
+        <div class="match-item-reason">${tea.badReasons[i] || ''}</div>
+      </div>
+    </li>`).join('');
+
+  document.getElementById('tea-result').innerHTML = `
+    <div class="result-area">
+      <div class="result-header">
+        <h2>${tea.name}</h2>
+        <span class="badge badge-tea">${tea.sub}</span>
+      </div>
+      <div class="principle-box">
+        <strong>一壺一茶 (일호일차)</strong> — 자사호는 이중기공 구조로 장기 사용 시 차 성분이 흡착됩니다. 다른 종류의 차를 섞어 쓰면 혼향(混香) 문제가 생기므로, 한 호에 한 종류의 차만 사용하는 것이 원칙입니다.<sup class="footnote-ref" title="${FOOTNOTES[3]}">[4]</sup>
+      </div>
+      <div class="section-title good"><span class="dot dot-good"></span>어울리는 니료</div>
+      <ul class="match-list">${goodItems}</ul>
+      ${tea.bad.length ? `<div class="section-title bad"><span class="dot dot-bad"></span>피해야 할 니료</div>
+      <ul class="match-list">${badItems}</ul>` : ''}
+      ${buildFootnoteSection()}
+    </div>`;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  if (tab === 'clay') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('panel-clay').classList.add('active');
+  } else {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('panel-tea').classList.add('active');
+  }
+}
+</script>
+</body>
+</html>
