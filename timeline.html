@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한·중·일 차 역사 타임라인</title>
+<style>
+:root {
+  --bg: #faf8f3;
+  --border: #e8e2d9;
+  --text: #2c2c2c;
+  --muted: #8a8078;
+  --cn: #b5451b;
+  --kr: #2c6e49;
+  --jp: #7a2040;
+  --cn-light: #f9ede8;
+  --kr-light: #e8f4ec;
+  --jp-light: #f5eaf0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif; background: var(--bg); color: var(--text); }
+
+header {
+  background: #1a1a1a; color: #fff;
+  padding: 24px 28px 20px;
+}
+header h1 { font-size: 1.15rem; font-weight: 600; }
+header p { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+.wrap { max-width: 1020px; margin: 0 auto; padding: 0 12px 80px; }
+
+/* Column headers */
+.col-headers {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+  margin-top: 20px;
+  position: sticky; top: 0; z-index: 10;
+}
+.col-hdr {
+  padding: 14px 16px; text-align: center;
+  font-size: 0.88rem; font-weight: 700;
+  letter-spacing: 0.3px; color: white;
+}
+.col-hdr.cn { background: var(--cn); }
+.col-hdr.kr { background: var(--kr); }
+.col-hdr.jp { background: var(--jp); }
+.col-hdr .sub { display: block; font-size: 0.68rem; font-weight: 400; opacity: 0.8; margin-top: 2px; }
+
+/* Era sections */
+.era-section {
+  border: 1px solid var(--border);
+  border-top: none;
+}
+.era-section:last-of-type { border-radius: 0 0 12px 12px; }
+
+.era-label {
+  background: #f0ece5;
+  padding: 7px 16px;
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.era-cols {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 0;
+}
+.era-col {
+  padding: 8px 0 4px;
+  border-right: 1px solid var(--border);
+  min-height: 60px;
+  position: relative;
+}
+.era-col:last-child { border-right: none; }
+
+/* Timeline line */
+.era-col::before {
+  content: '';
+  position: absolute;
+  left: 21px; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--col-line, #e8e2d9);
+}
+.era-col.cn-col { --col-line: #edb89e; }
+.era-col.kr-col { --col-line: #9ecdb2; }
+.era-col.jp-col { --col-line: #d4a8be; }
+
+/* Events */
+.event-item {
+  display: flex; align-items: flex-start;
+  padding: 8px 14px 8px 14px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s;
+  gap: 10px;
+}
+.event-item:hover { background: rgba(0,0,0,0.03); }
+.event-item.active { background: var(--col-bg, #f5f5f5); }
+.cn-col .event-item.active { background: var(--cn-light); }
+.kr-col .event-item.active { background: var(--kr-light); }
+.jp-col .event-item.active { background: var(--jp-light); }
+
+.event-dot {
+  width: 10px; height: 10px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--dot-color, #ccc);
+  background: white;
+  margin-top: 4px; margin-left: 8px;
+  transition: all 0.15s;
+  z-index: 1; position: relative;
+}
+.cn-col .event-dot { --dot-color: var(--cn); }
+.kr-col .event-dot { --dot-color: var(--kr); }
+.jp-col .event-dot { --dot-color: var(--jp); }
+
+.event-item.active .event-dot,
+.event-item:hover .event-dot {
+  background: var(--dot-color, #ccc);
+}
+
+.event-text { min-width: 0; }
+.event-year {
+  font-size: 0.68rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 1px;
+}
+.event-title {
+  font-size: 0.82rem; font-weight: 500;
+  line-height: 1.35; color: var(--text);
+}
+.cn-col .event-item.active .event-title { color: var(--cn); }
+.kr-col .event-item.active .event-title { color: var(--kr); }
+.jp-col .event-item.active .event-title { color: var(--jp); }
+
+/* Empty slot */
+.empty-slot {
+  padding: 12px 14px 12px 32px;
+  color: #ccc; font-size: 0.72rem;
+  min-height: 44px;
+}
+
+/* Detail panel */
+.detail-panel {
+  margin-top: 16px;
+  background: white; border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 120px;
+  transition: all 0.2s ease;
+}
+.detail-empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 120px;
+  color: #ccc; font-size: 0.83rem;
+}
+.detail-content { padding: 20px 22px; }
+.detail-top {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+}
+.detail-badge {
+  padding: 3px 10px; border-radius: 8px;
+  font-size: 0.72rem; font-weight: 600; color: white;
+}
+.detail-year-title { flex: 1; min-width: 0; }
+.detail-year { font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; }
+.detail-title { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+.detail-body { font-size: 0.84rem; line-height: 1.65; color: #444; }
+.detail-source {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem; color: var(--muted);
+}
+
+/* Footer note */
+.foot-note {
+  margin-top: 28px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.7rem; color: #b0a898; line-height: 1.6;
+}
+.foot-note strong { color: var(--muted); }
+
+@media(max-width:640px) {
+  .col-headers, .era-cols { grid-template-columns: 1fr; }
+  .era-col { border-right: none; border-bottom: 1px solid var(--border); }
+  .era-col:last-child { border-bottom: none; }
+  .col-headers { position: static; border-radius: 12px; }
+  .era-section:last-of-type { border-radius: 0 0 12px 12px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>한·중·일 차 역사 타임라인</h1>
+  <p>이벤트를 클릭하면 상세 내용이 표시됩니다</p>
+</header>
+
+<div class="wrap">
+  <div class="col-headers">
+    <div class="col-hdr cn">중국 中國<span class="sub">약 4,000년의 차 역사</span></div>
+    <div class="col-hdr kr">한국 韓國<span class="sub">2,000년의 다례 전통</span></div>
+    <div class="col-hdr jp">일본 日本<span class="sub">1,200년의 다도 문화</span></div>
+  </div>
+
+  <div id="timeline"></div>
+
+  <div class="detail-panel" id="detail">
+    <div class="detail-empty" id="detail-empty">이벤트를 클릭하면 상세 내용이 표시됩니다</div>
+    <div class="detail-content" id="detail-content" style="display:none"></div>
+  </div>
+
+  <div class="foot-note">
+    <strong>출처</strong> —
+    중국: GB/T 30766-2014 · ISO 20715:2023 · Scientific Reports (한 경제 무덤 차 발견, 2016) |
+    한국: 삼국사기 · 삼국유사 · 한국민족문화대백과사전 |
+    일본: 日本後紀 · Wikipedia: History of tea in Japan
+  </div>
+</div>
+
+<script>
+const ERAS = [
+  {
+    label: '고대 기원  ·  ~ 600년',
+    cn: [
+      {
+        year: 'BC 2737', title: '신농(神農) 전설',
+        badge: '중국', color: 'cn',
+        body: '신농제(神農帝)가 나무 아래서 물을 끓이던 중 야생 차나무 잎이 냄비에 떨어진 것이 차의 시초라는 전설. 신농은 몸이 수정처럼 투명해 약초 효능을 직접 볼 수 있었다고 한다. 역사적 사실이 아닌 신화이나, 차가 최초에 약재로 인식되었다는 문화적 기억을 반영한다.',
+        source: '신농본초경(神農本草經, BC 200년경) · 한국민족문화대백과 재참조'
+      },
+      {
+        year: 'BC 141', title: '한 경제 무덤 차 발견',
+        badge: '중국', color: 'cn',
+        body: '섬서성 함양 한양릉(漢陽陵)에서 기원전 141년 사망한 한 경제(景帝)의 부장품으로 차가 발견되었다. 테아닌·카페인이 검출되고 표면 결정이 현대 찻잎과 일치함을 2016년 Scientific Reports에 발표. 시안 지역은 차가 자생하지 않으므로 수입·조공으로 들여온 귀한 물품이었음을 증명한다. 음차(飮茶)의 최고(最古) 물리적 증거.',
+        source: 'Scientific Reports 2016 (Nature 계열, A급 동료심사) · 중국차_역사_통사.md'
+      },
+      {
+        year: 'BC 53', title: '맹산(蒙山) 최초 재배',
+        badge: '중국', color: 'cn',
+        body: '사천성 맹산(蒙山)에서 한 선제(宣帝) 감로(甘露) 연간(BC 53~50년)에 최초 차 재배 기록. 이후 당~청까지 황제 헌상용 봄차를 이곳에서 채취했다. 맹정황아(蒙頂黃芽)의 산지.',
+        source: '중국차_역사_통사.md · 맹산 제다 기록'
+      },
+    ],
+    kr: [
+      {
+        year: '48년', title: '허황옥 가야 기원설',
+        badge: '한국', color: 'kr',
+        body: '삼국유사 가락국기에 따르면 인도 아유타국에서 온 허황옥(許黃玉)이 혼수품으로 차씨를 가져왔다는 전설. 역사성에 학계 이견이 있으나, 신라 법민왕(661년) 때 수로왕 제사에 차를 올렸다는 기록은 가야 지역의 조기 음차 문화를 방증한다. 경남 지역의 야생 차나무 군락도 참고 자료.',
+        source: '삼국유사(三國遺事) 가락국기 · 한국차_역사_통사.md'
+      },
+    ],
+    jp: [],
+  },
+  {
+    label: '당·통일신라·나라헤이안  ·  600 ~ 935년',
+    cn: [
+      {
+        year: '618~907', title: '당(唐): 차의 전국 대중화',
+        badge: '중국', color: 'cn',
+        body: '당나라에서 차는 처음으로 일상 음료로 전국에 확산되었다. 주류 음다법은 전차(煎茶) — 차 병(茶餅)을 갈아 끓인 물에 넣어 마시는 방식. 793년 차세(茶稅) 10%를 법제화하여 국가 재정의 한 축이 되었다. 중국 차의 일본·한반도 전파도 이 시기 해상 실크로드를 통해 본격화되었다.',
+        source: '중국차_역사_통사.md · ISO 20715:2023'
+      },
+      {
+        year: '760년', title: '육우(陸羽) 다경(茶經) 저술',
+        badge: '중국', color: 'cn',
+        body: '육우(733~804)가 세계 최초 차 전문서 다경(茶經)을 저술. 약 7,000 한자, 3권 10장 구성. 차의 식물학적 특성·재배·채취·도구 15종·끓이는 법·물 등급·산지 품질까지 망라. "차를 약용에서 문화적 음용으로 전환시킨 분기점"으로 평가. 육우는 "차의 성인(茶聖)"으로 불린다.',
+        source: '중국차_역사_통사.md · Wikipedia: Lu Yu'
+      },
+    ],
+    kr: [
+      {
+        year: '7세기', title: '화랑도·원효의 음차',
+        badge: '한국', color: 'kr',
+        body: '화랑들은 산천 유랑과 수련 과정에서 차를 달이며 의식을 치렀다. 원효(617~686) 관련 기록에서 "사복이 원효에게 차를 공양했다"는 내용이 나온다. 선덕여왕(632~647) 대까지 소급될 수 있는 기록으로, 차가 수신(修身)의 도구로 인식되는 전통의 단초.',
+        source: '삼국유사 · 한국차_역사_통사.md'
+      },
+      {
+        year: '8세기 중반', title: '충담사(忠談師) 공차',
+        badge: '한국', color: 'kr',
+        body: '삼국유사에 따르면 경덕왕(742~765) 대의 승려 충담사는 매년 삼짇날과 구월 구일 남산 미륵세존에게 차를 달여 공양했다. 경덕왕이 직접 그로부터 차를 대접받는 장면도 등장한다. 8세기 중엽 신라 왕실에 체계적인 음차 의례가 자리잡고 있었음을 증명하는 최古 구체적 기록.',
+        source: '삼국유사(三國遺事) · 한국차_역사_통사.md'
+      },
+      {
+        year: '828년', title: '김대렴(金大廉) 차씨 도입',
+        badge: '한국', color: 'kr',
+        body: '흥덕왕 3년, 입당 회사(回使) 김대렴이 당나라에서 차씨를 가져왔다. 왕명으로 지리산에 식재. 삼국사기 기록: "茶自善德王時有之 至此盛焉(차는 선덕왕 때부터 있었으나 이로부터 성행했다)." 지리산 중심의 영남·호남이 한국 차의 본고장으로 자리잡는 계기. 현대 유전자 연구에서 한국 재래종 차나무가 중국 품종과 가까움을 확인.',
+        source: '삼국사기(三國史記) · 한국민족문화대백과사전 · 한국차_역사_통사.md'
+      },
+    ],
+    jp: [
+      {
+        year: '805~806', title: '사이초·구카이 차씨 귀국',
+        badge: '일본', color: 'jp',
+        body: '견당사로 파견된 유학승 사이초(最澄, 767~822)가 805년, 구카이(空海, 774~835)가 806년 귀국 시 차씨와 돌맷돌(石臼)을 가져왔다. 사이초는 히에이잔(比叡山) 기슭에 파종. 구카이는 "다노유(茶の湯)"라는 용어를 최초로 사용한 인물로도 기록된다.',
+        source: '일본차_역사.md · Wikipedia: History of tea in Japan'
+      },
+      {
+        year: '815년', title: '사가 천황(嵯峨天皇)에게 헌차',
+        badge: '일본', color: 'jp',
+        body: '日本後紀에 따르면 홍인 6년(815) 4월 22일, 승려 에이추(永忠)가 사가 천황에게 차를 끓여 올렸다. 일본에서 차를 마셨다는 가장 신뢰할 수 있는 최초 문헌 기록. 사가 천황은 수도 인근에 다섯 곳의 차밭 조성을 명했다.',
+        source: '日本後紀 · 일본차_역사.md'
+      },
+      {
+        year: '894년', title: '견당사 폐지 → 차 문화 쇠퇴',
+        badge: '일본', color: 'jp',
+        body: '스가와라노 미치자네(菅原道真)의 건의로 견당사가 폐지되면서 당 문화에 대한 관심이 감소했다. 차 문화 역시 귀족·승려 간 의례적 음용에 그치며 일반화되지 못하고 약 300년 침체기에 접어들었다. 이 시기 차는 주로 당나라식 단차(団茶, 압축 병차) 형태였다.',
+        source: '일본차_역사.md'
+      },
+    ],
+  },
+  {
+    label: '송·고려·가마쿠라  ·  900 ~ 1350년',
+    cn: [
+      {
+        year: '960년~', title: '송(宋): 점다(點茶) 전성기',
+        badge: '중국', color: 'cn',
+        body: '"차는 당에서 발전하고 송에서 꽃피었다(茶興於唐，盛於宋)." 점다법(點茶): 차 병을 돌맷돌로 갈아 분말화 → 다완에 넣고 뜨거운 물을 부어 차선(茶筅)으로 거품을 냄. 황제도 직접 참여하는 투다(鬪茶, 차 경연) 문화. 북원(北苑) 공차(貢茶)에서 용봉단차(龍鳳團茶) 생산. 일본 말차 문화의 직접적 원형.',
+        source: '중국차_역사_통사.md · 송대차문화.md'
+      },
+    ],
+    kr: [
+      {
+        year: '918년~', title: '고려: 차 문화 전성기',
+        badge: '한국', color: 'kr',
+        body: '고려(918~1392)는 한국 차 문화의 황금기. ① 불교 육법공양(六法供養) 중 차 포함, 팔관재·연등회 등 국가 행사의 진다의식. ② 다방(茶房) 설치 — 조정 다례·외교 영접 전담 관부. ③ 귀족·문인의 다문화 — 이규보(1168~1241) 등이 다시(茶詩)를 남겼다. 고려청자 다구가 전체 생산량의 50% 이상 차지.',
+        source: '한국차_역사_통사.md · 한국민족문화대백과사전'
+      },
+      {
+        year: '11세기', title: '점다법(點茶法) 도입·고려청자',
+        badge: '한국', color: 'kr',
+        body: '송과의 교류로 말차 방식(점다법) 도입. 다완·탁잔·주자·다마(茶磨, 차 맷돌) 등 다구가 고려청자 생산의 핵심이 되었다. 독창적인 통형잔(筒形盞)은 점다법을 위해 고려에서 고안된 다구로, 뚜껑이 있어 차가 식지 않게 하고 차 후 탕으로 입가심하는 고려 음다 풍습을 반영.',
+        source: '한국차_역사_통사.md · 우리역사넷 "차 문화와 청자"'
+      },
+    ],
+    jp: [
+      {
+        year: '1191년', title: '에이사이(栄西) 점다법 재전래',
+        badge: '일본', color: 'jp',
+        body: '선승 에이사이(1141~1215)가 두 번째 남송 도항 후 귀국 시 히라도지마와 규슈 산중에 차씨를 파종. 교토 고잔지의 묘에 쇼닌에게 차씨를 나눠주어 우지차(宇治茶)의 기원이 되었다. 에이사이가 전한 것은 송나라 점다법(말차 방식). 무사계급에 차를 보급하는 결정적 계기.',
+        source: '일본차_역사.md · 喫茶養生記'
+      },
+      {
+        year: '1211년', title: '喫茶養生記 저술',
+        badge: '일본', color: 'jp',
+        body: '에이사이가 일본 최초의 다서(茶書) 喫茶養生記를 저술. "茶は養生の仙薬なり、延命の妙術なり(차는 양생의 선약이요, 연명의 묘술이다)." 1214년 과음으로 고생하는 3대 쇼군 미나모토노 사네토모에게 직접 차를 달여주고 이 책을 헌정. 무사계급 전파의 결정적 계기.',
+        source: '일본차_역사.md · 喫茶養生記 원문'
+      },
+    ],
+  },
+  {
+    label: '명·조선·무로마치~에도  ·  1350 ~ 1860년',
+    cn: [
+      {
+        year: '1391년', title: '홍무제 산차(散茶) 전환 칙령',
+        badge: '중국', color: 'cn',
+        body: '명 홍무제(朱元璋)가 병차 형태의 공납을 폐지하고 잎차(散茶)로 전환 명령. "용봉단차 제조가 백성의 노동력을 과도하게 착취한다"는 이유. 수백 년 북원(北苑) 공차 체계가 일시에 붕괴. 현대의 찻잎+열탕 침출 방식의 기원. 초청(炒靑, 솥 덖음) 기술 정착 → 오늘날 녹차 제다법의 기반.',
+        source: '중국차_역사_통사.md · GB/T 30766-2014'
+      },
+      {
+        year: '17세기', title: '홍차·우롱차 탄생',
+        badge: '중국', color: 'cn',
+        body: '복건성에서 산화 실험을 통해 우롱차(半발효)와 홍차(完발효)가 탄생. 정산소종(正山小種)은 세계 최초의 홍차로, 무이산 통목관(桐木關)에서 출발해 영국으로 수출되며 유럽 홍차 문화의 기원이 되었다. 기문홍차(祁門紅茶, 1876)가 뒤를 이어 세계 3대 홍차 반열에 올랐다.',
+        source: '중국차_역사_통사.md · 홍차.md'
+      },
+      {
+        year: '1644~1912', title: '청(淸): 대유럽 수출 시대',
+        badge: '중국', color: 'cn',
+        body: '청나라 초기~중기 광저우(廣州) 단일 항구를 통한 대외 무역 독점. 영국 동인도회사, 네덜란드 VOC를 통해 유럽으로 차 수출 급증. 중국 차가 영국의 국민 음료가 되는 과정의 시작. 1840년 영국이 인도 아삼에서 차 재배에 성공하며 중국 차의 독점 체제가 흔들리기 시작했다.',
+        source: '중국차_역사_통사.md'
+      },
+    ],
+    kr: [
+      {
+        year: '1392년~', title: '조선: 차 문화 쇠퇴',
+        badge: '한국', color: 'kr',
+        body: '조선 개국 후 숭유억불(崇儒抑佛) 정책으로 불교 의례에 기반한 차 문화가 급속히 쇠퇴. 고려 말 무리한 차 과세로 민간의 부정적 인식도 형성됨. 명나라 장수가 "귀국에서는 왜 차를 마시지 않습니까?"라고 물었다는 일화가 전해질 정도. 숭늉·담배·술이 차를 대체했다. 단, 남쪽 사찰(대흥사·선암사·쌍계사)에서는 명맥 유지.',
+        source: '한국차_역사_통사.md'
+      },
+      {
+        year: '1494년', title: '이목(李穆) 다부(茶賦) 저술',
+        badge: '한국', color: 'kr',
+        body: '조선 초 한재(寒齋) 이목(1471~1498)이 24세 때 연경 유학 중 체험을 바탕으로 저술. 차의 오공(五功)·육덕(六德)을 시부(詩賦) 형식으로 노래하며 "다심일여(茶心一如)"를 핵심 사상으로 제시. 훗날 초의선사의 동다송(1837)보다 340년 앞선 작품으로, 한국 최초의 다도 경전이자 세계 최초의 다도(道) 경전으로 평가받기도 한다. 무오사화(1498)로 27세에 처형되어 더욱 비극적인 문헌.',
+        source: '한국차_역사_통사.md · 세계일보 "한재 이목 다부"'
+      },
+      {
+        year: '1786~1866', title: '초의선사(草衣禪師)',
+        badge: '한국', color: 'kr',
+        body: '법명 의순(意恂). 전남 무안 출신, 대흥사에서 40여 년 수행. 다산 정약용(1762~1836)과 1809년 교류 시작 — 정약용으로부터 실학적 차 탐구 방법론을 얻었다. 추사 김정희(1786~1856)와는 동갑 평생 교우 — 추사의 "천하제일의 차"라는 극찬을 받았다. 선·교·율 삼학과 시·서·화에 두루 통달한 조선 말 최고의 다인.',
+        source: '한국차_역사_통사.md · 국가유산청 · 국립중앙박물관 간찰첩'
+      },
+      {
+        year: '1837년', title: '동다송(東茶頌) 저술',
+        badge: '한국', color: 'kr',
+        body: '초의선사 저술. 7언 절구 31수로 이루어진 한국 다도의 이론적 집대성. 차의 기원·역사·제다·음다법을 망라하고 "동다(東茶)"의 독자적 가치를 주장. 한국 다도의 핵심 정신 "중정(中正)" — 과하거나 모자라지 않는 균형 — 이 명시적으로 제시되었다. 육우 다경에 비견되는 한국 최고의 다서.',
+        source: '한국차_역사_통사.md · 동다송 원문'
+      },
+    ],
+    jp: [
+      {
+        year: '1450년대', title: '무라타 주코(村田珠光) 와비차',
+        badge: '일본', color: 'jp',
+        body: '일본 다도 고유 미학 와비차(侘茶)를 무라타 주코(1423~1502)가 개념화. 선승 잇큐 소준에게 사사하며 선(禪)을 다도에 접목 → "차선일미(茶禅一味)". "냉え枯れ(차갑고 시든 것)"의 미학 — 화려한 당나라식 도구 대신 소박한 일본산 도기를 혼용. 아시카가 요시마사의 은각사·동인재(同仁齋, 4.5첩 다실)가 공간적 배경이 되었다.',
+        source: '일본차_역사.md · 일본차_마스터가이드.md'
+      },
+      {
+        year: '1587년', title: '기타노 대차노유(北野大茶湯)',
+        badge: '일본', color: 'jp',
+        body: '도요토미 히데요시가 교토 기타노 텐만구 앞에서 주최한 사상 최대 규모의 공개 다회. 센노 리큐(1522~1591)가 총 기획. 신분 불문 참가 가능 → 다도의 대중화와 국가적 위상을 상징하는 사건. 당시 리큐는 히데요시의 최측근 다두(茶頭)이자 실질적 정치 고문으로 막강한 권력을 행사했다.',
+        source: '일본차_역사.md · 일본차_마스터가이드.md'
+      },
+      {
+        year: '1591년', title: '센노 리큐(千利休) 할복',
+        badge: '일본', color: 'jp',
+        body: '와비차 집대성자 센노 리큐(1522~1591)가 70세에 히데요시의 명으로 할복. 원인: 대덕사 산문에 리큐 목상을 배치해 히데요시의 행렬을 "밟게" 한 불경, 도구 거래 이권, 권력 갈등 등 다양한 설. 사후 세 손자가 표천가(表千家)·이천가(裏千家)·무샤코지천가(武者小路千家) — 삼천가(三千家)를 창립했다.',
+        source: '일본차_역사.md · 일본차_마스터가이드.md'
+      },
+      {
+        year: '1654년', title: '인겐 류키(隠元隆琦) 도일',
+        badge: '일본', color: 'jp',
+        body: '명나라에서 도일한 인겐 류키(1592~1673)가 오바쿠종(黄檗宗)을 창시하고 우지에 만푸쿠지(萬福寺)를 건립. 중국 명대의 포차법(泡茶法) — 주전자에 찻잎을 넣고 우려내는 잎차 방식 — 을 일본에 전파. 이것이 에도 시대 센차도(煎茶道) 발흥의 결정적 계기가 되었다.',
+        source: '일본차_역사.md'
+      },
+      {
+        year: '1738년', title: '나가타니 소엔 청제전차법(青製煎茶法)',
+        badge: '일본', color: 'jp',
+        body: '우지타와라 출신 나가타니 소엔(1681~1778)이 15년 시행착오 끝에 완성. 신아 선별 → 쪄서(蒸す) 효소 불활성화 → 호이로(焙炉) 위에서 손으로 비비며 건조. 결과: 선명한 에메랄드빛 색상, 깔끔하고 달콤한 향미. 에도의 차상 야마모토야마(山本山)를 통해 대히트. 오늘날 일본 센차·교쿠로 제조법의 근간.',
+        source: '일본차_역사.md · 일본차_마스터가이드.md'
+      },
+      {
+        year: '1835년', title: '교쿠로(玉露) 개발',
+        badge: '일본', color: 'jp',
+        body: '에도의 차상 야마모토야마 6대 가헤이가 우지 오구라 마을에서 차광 재배(覆下栽培)와 청제 증청 제법을 결합하여 개발. "구슬 같은 이슬(玉の露)"에서 명명. 차광 20~30일로 테아닌 극대화, 카테킨 전환 억제 → 감칠맛(旨味)↑ 떫음↓. 메이지 초기 쓰지리 우에몬이 바늘형 제법 완성.',
+        source: '일본차_역사.md · 일본차_마스터가이드.md'
+      },
+    ],
+  },
+  {
+    label: '근현대  ·  1850년 ~ 현재',
+    cn: [
+      {
+        year: '1979년', title: '6대다류 분류 표준화',
+        badge: '중국', color: 'cn',
+        body: '중국 차업 전문가들이 약 1,000여 종의 차를 가공법과 발효도 기준으로 6대 분류(녹차·백차·황차·우롱차·홍차·흑차)로 표준화. 2014년 중국 국가표준 GB/T 30766-2014 "茶叶分类"으로 공식화, 2023년 국제표준 ISO 20715:2023에 채택. 현대 세계 차 분류 체계의 근간.',
+        source: 'GB/T 30766-2014 · ISO 20715:2023 · 6대다류_가공과학.md'
+      },
+    ],
+    kr: [
+      {
+        year: '1939년', title: '보성다원(寶城茶園) 조성',
+        badge: '한국', color: 'kr',
+        body: '일제강점기 (주)경성화학이 전남 보성 봉산리 임야에 국내 최초 대규모 다원 30ha를 조성. 1940년 인도산 베니오마레(Benihomare) 품종 수입·식재. 해방 후 1957년 장영섭 회장이 인수, 대한다업주식회사 설립, 1946~1973년에 590ha로 확장. 현재 국내 녹찻잎 생산량 약 40%를 담당하는 최대 산지.',
+        source: '한국차_역사_통사.md · 대한다원 공식 사이트'
+      },
+      {
+        year: '1977년~', title: '현대 차 부흥 운동',
+        badge: '한국', color: 'kr',
+        body: '1977년 한국차도회(韓國茶道會) 설립을 기점으로 전통문화 부흥 운동의 일환으로 차 문화가 재조명받기 시작. 1979 한국차인회, 1983 다도박물관(부산), 1984 한국차인연합회 등 연달아 설립. 1980년대 인사동을 중심으로 전통 찻집 확산, 보성·하동·강진·제주 등지의 근대 다원 확장. GI(지리적 표시) 보호 등록.',
+        source: '한국차_역사_통사.md · 한국차_산업_현황_2026.md'
+      },
+    ],
+    jp: [
+      {
+        year: '1853년', title: '페리 내항 → 수출 시대 개막',
+        badge: '일본', color: 'jp',
+        body: '미국 페리 제독 내항과 1858년 안세이 조약으로 일본 차 수출이 본격화. 나가사키 상인 오우라 케이(大浦慶)가 우레시노차를 네덜란드 상인에게 소개한 것이 수출의 기원. 1870년에는 생산량의 94.7%가 수출되었고, 1899년 20,839톤으로 피크. 당시 차는 생사(生糸) 다음 일본 제2의 수출품이었다.',
+        source: '일본차_역사.md · 일본차_마스터가이드.md'
+      },
+      {
+        year: '1868년', title: '메이지 유신·시즈오카 대규모 개간',
+        badge: '일본', color: 'jp',
+        body: '메이지 유신으로 직업을 잃은 도쿠가와 구 가신단이 시즈오카(静岡) 마키노하라(牧之原) 대지를 개간하여 대규모 다원 조성. 1881년 전국 생산의 12.4%, 1895년 34.1%로 급성장. 1884년 타카바야시 켄조가 배전기 발명, 1896년 조유기 완성 → 제다 기계화. 오늘날 시즈오카는 일본 최대 차 생산지(2024년에는 가고시마에 1위 자리를 내어줌).',
+        source: '일본차_역사.md · 일본차_산업_현황_2026.md'
+      },
+    ],
+  },
+];
+
+const BADGE_COLORS = { cn: '#b5451b', kr: '#2c6e49', jp: '#7a2040' };
+const BADGE_LABELS = { cn: '중국', kr: '한국', jp: '일본' };
+
+let activeEl = null;
+
+function renderTimeline() {
+  const wrap = document.getElementById('timeline');
+  wrap.innerHTML = '';
+
+  ERAS.forEach(era => {
+    const section = document.createElement('div');
+    section.className = 'era-section';
+
+    const label = document.createElement('div');
+    label.className = 'era-label';
+    label.textContent = era.label;
+    section.appendChild(label);
+
+    const cols = document.createElement('div');
+    cols.className = 'era-cols';
+
+    ['cn', 'kr', 'jp'].forEach(col => {
+      const colDiv = document.createElement('div');
+      colDiv.className = `era-col ${col}-col`;
+
+      const events = era[col];
+      if (!events || events.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-slot';
+        colDiv.appendChild(empty);
+      } else {
+        events.forEach(ev => {
+          const item = document.createElement('div');
+          item.className = 'event-item';
+          item.innerHTML = `
+            <div class="event-dot"></div>
+            <div class="event-text">
+              <div class="event-year">${ev.year}</div>
+              <div class="event-title">${ev.title}</div>
+            </div>`;
+          item.addEventListener('click', () => showDetail(ev, item));
+          colDiv.appendChild(item);
+        });
+      }
+      cols.appendChild(colDiv);
+    });
+
+    section.appendChild(cols);
+    wrap.appendChild(section);
+  });
+}
+
+function showDetail(ev, el) {
+  if (activeEl) activeEl.classList.remove('active');
+  activeEl = el;
+  el.classList.add('active');
+
+  document.getElementById('detail-empty').style.display = 'none';
+  const content = document.getElementById('detail-content');
+  content.style.display = 'block';
+
+  const color = BADGE_COLORS[ev.color];
+  const label = BADGE_LABELS[ev.color];
+
+  content.innerHTML = `
+    <div class="detail-top">
+      <span class="detail-badge" style="background:${color}">${label}</span>
+      <div class="detail-year-title">
+        <div class="detail-year">${ev.year}</div>
+        <div class="detail-title" style="color:${color}">${ev.title}</div>
+      </div>
+    </div>
+    <div class="detail-body">${ev.body}</div>
+    <div class="detail-source">${(() => { const s = (ev.source||'').split(' · ').filter(x => !x.trim().endsWith('.md')).join(' · ').trim(); return s ? '출처: ' + s : ''; })()}</div>`;
+
+  content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+renderTimeline();
+</script>
+</body>
+</html>
