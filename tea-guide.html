@@ -355,6 +355,14 @@ body {
 .page-section ul, .page-section ol { margin: 6px 0 10px; padding-left: 20px; }
 .page-section li { margin-bottom: 3px; word-break: keep-all; }
 
+/* ── 모바일 ── */
+@media (max-width: 720px) {
+  #sidebar { transform: translateX(-100%); }
+  #main { margin-left: 0 !important; }
+  #top-bar-chapter { display: none; }
+  .page-section { padding: 28px 20px 36px; }
+}
+
 /* ── 인쇄 ── */
 @media print {
   #top-bar, #sidebar { display: none !important; }
