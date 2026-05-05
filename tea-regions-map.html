@@ -21,6 +21,8 @@ body { font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background:
 header { background: #1e2e20; color: white; padding: 22px 28px 18px; }
 header h1 { font-size: 1.2rem; font-weight: 600; }
 header p { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
+a.back-home { display:inline-block; color:rgba(255,255,255,.45); text-decoration:none; font-size:.7rem; margin-bottom:8px; transition:color .15s; }
+a.back-home:hover { color:#fff; }
 
 .main { display: flex; height: calc(100vh - 80px); min-height: 480px; }
 
@@ -143,6 +145,7 @@ header p { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
 <body>
 
 <header>
+  <a href="index.html" class="back-home">← 홈으로</a>
   <h1>세계 차 산지 지도</h1>
   <p>마커를 클릭하면 테루아 · GI 보호 · 대표 차 정보를 확인할 수 있습니다</p>
 </header>

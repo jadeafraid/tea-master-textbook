@@ -59,6 +59,8 @@ body {
   color: var(--green-300); white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; max-width: 320px;
 }
+a.back-home { color:rgba(255,255,255,.45); text-decoration:none; font-size:.7rem; white-space:nowrap; transition:color .15s; }
+a.back-home:hover { color:#fff; }
 
 /* ── 사이드바 TOC ── */
 #sidebar {
@@ -410,6 +412,7 @@ body {
   <button id="sidebar-toggle">☰</button>
   <span id="top-bar-title">Tea Guide</span>
   <span id="top-bar-chapter"></span>
+  <a href="index.html" class="back-home">← 홈으로</a>
 </div>
 
 <nav id="sidebar">
