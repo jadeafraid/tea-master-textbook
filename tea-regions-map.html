@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세계 차 산지 지도</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson@3/dist/topojson.min.js"></script>
+<style>
+:root {
+  --bg: #faf8f3;
+  --border: #e8e2d9;
+  --text: #2c2c2c;
+  --muted: #7a7065;
+  --ocean: #cddee8;
+  --land: #e8e4d8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background: var(--bg); color: var(--text); }
+
+header { background: #1e2e20; color: white; padding: 22px 28px 18px; }
+header h1 { font-size: 1.2rem; font-weight: 600; }
+header p { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+.main { display: flex; height: calc(100vh - 80px); min-height: 480px; }
+
+.map-area {
+  flex: 1 1 auto;
+  position: relative;
+  background: var(--ocean);
+  overflow: hidden;
+}
+#map { width: 100%; height: 100%; display: block; }
+
+.country { fill: var(--land); stroke: #fff; stroke-width: 0.4; transition: fill .15s; }
+.graticule { fill: none; stroke: #b8cfd8; stroke-width: 0.3; }
+.sphere { fill: var(--ocean); }
+.tropic { fill: none; stroke: rgba(180,160,100,0.35); stroke-width: 0.8; stroke-dasharray: 4,3; }
+
+.marker-wrap { cursor: pointer; }
+.m-pulse {
+  animation: mpulse 2.6s ease-in-out infinite;
+  fill: none;
+  stroke-width: 1.5;
+}
+@keyframes mpulse { 0%,100%{opacity:.25;r:0} 60%{opacity:.5} }
+.m-dot { opacity: .88; transition: opacity .15s, r .15s; }
+.marker-wrap:hover .m-dot { opacity: 1; }
+.m-label { font-size: 8.5px; fill: #3a3530; pointer-events: none; font-family: inherit; }
+
+.legend {
+  position: absolute; bottom: 14px; left: 14px;
+  background: rgba(255,255,255,0.92); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 13px;
+}
+.leg-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.7rem; color: var(--muted); }
+.leg-row:last-child { margin-bottom: 0; }
+.leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+.zoom-btns {
+  position: absolute; top: 14px; right: 14px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.zbtn {
+  width: 28px; height: 28px; background: rgba(255,255,255,0.92);
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+}
+.zbtn:hover { background: white; color: var(--text); }
+
+/* Panel */
+.panel {
+  flex: 0 0 340px;
+  background: white;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-hint {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--muted); text-align: center; padding: 32px 24px;
+  gap: 10px; font-size: 0.85rem; line-height: 1.6;
+}
+.hint-icon { font-size: 2.2rem; }
+
+.p-country { padding: 20px 18px 24px; }
+.p-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+.p-flag { font-size: 1.6rem; line-height: 1; }
+.p-name { font-size: 1.05rem; font-weight: 700; }
+.p-prod { font-size: 0.72rem; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+
+.type-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 16px; }
+.type-chip {
+  font-size: 0.7rem; padding: 2px 9px; border-radius: 10px;
+  background: #f2f7f2; color: #3d5e40; border: 1px solid #cadecc;
+}
+
+.sub-cards { display: flex; flex-direction: column; gap: 10px; }
+.sub-card {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 13px;
+  border-left-width: 3px;
+}
+.sub-title { font-size: 0.88rem; font-weight: 700; margin-bottom: 9px; }
+.sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 10px; margin-bottom: 9px; }
+.sg-key { font-size: 0.62rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 1px; }
+.sg-val { font-size: 0.76rem; line-height: 1.4; }
+.sub-gi { font-size: 0.76rem; margin-bottom: 7px; }
+.sub-gi b { color: #6a5a30; }
+.sub-teas { font-size: 0.82rem; font-weight: 600; margin-bottom: 4px; }
+.sub-flavor { font-size: 0.73rem; color: var(--muted); font-style: italic; line-height: 1.5; }
+
+/* Tooltip */
+#tt {
+  position: fixed; z-index: 200;
+  background: rgba(28,28,28,0.88); color: white;
+  font-size: 0.72rem; padding: 4px 9px; border-radius: 5px;
+  pointer-events: none; display: none; white-space: nowrap;
+}
+
+/* Sources */
+.sources {
+  border-top: 1px solid var(--border); padding: 14px 24px;
+  background: var(--bg);
+}
+.src-h { font-size: 0.68rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 7px; }
+.src-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.src-list li { font-size: 0.67rem; color: #a09890; padding-left: 13px; position: relative; line-height: 1.4; }
+.src-list li::before { content: attr(data-n); position: absolute; left: 0; color: #5a7a5e; font-weight: 600; }
+
+@media (max-width: 720px) {
+  .main { flex-direction: column; height: auto; }
+  .map-area { height: 300px; }
+  .panel { flex: none; border-left: none; border-top: 1px solid var(--border); }
+  .legend { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>세계 차 산지 지도</h1>
+  <p>마커를 클릭하면 테루아 · GI 보호 · 대표 차 정보를 확인할 수 있습니다</p>
+</header>
+
+<div class="main">
+  <div class="map-area" id="mapArea">
+    <svg id="map"></svg>
+    <div class="legend">
+      <div class="leg-row"><span class="leg-dot" style="background:#4a7a52"></span>녹차 주산지</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#7a6040"></span>우롱차</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#c44b37"></span>홍차 · 흑차</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#6a7a40"></span>마테 · 허브</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#9e8c70"></span>차 문화</div>
+    </div>
+    <div class="zoom-btns">
+      <button class="zbtn" id="zIn">＋</button>
+      <button class="zbtn" id="zOut">－</button>
+      <button class="zbtn" id="zReset" style="font-size:.65rem">⟳</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="panel-hint">
+      <div class="hint-icon">🌿</div>
+      <div>지도의 마커를 클릭하면<br>테루아 · GI 보호 · 대표 차<br>정보를 볼 수 있습니다</div>
+    </div>
+  </div>
+</div>
+
+<div id="tt"></div>
+
+<div class="sources">
+  <div class="src-h">출처</div>
+  <ul class="src-list">
+    <li data-n="1">ISO 20715:2023 · GB/T 30766-2014 — 6대다류 국제·중국 국가표준</li>
+    <li data-n="2">FAO 2025 — 국가별 생산량·수출 통계</li>
+    <li data-n="3">FAO GIAHS 2017 — 하동 전통 차농업 세계중요농업유산 등재</li>
+    <li data-n="4">world-atlas v2 (Mike Bostock, Natural Earth) — 세계 지도 지형 데이터</li>
+  </ul>
+</div>
+
+<script>
+const REGIONS = [
+  {
+    id:'china', label:'중국', flag:'🇨🇳', lat:30, lon:108, r:14, color:'#c44b37',
+    prod:'세계 1위 · 약 3,700만 MT (2024) · 세계 점유 53%',
+    types:['녹차','백차','황차','우롱차','홍차','흑차·보이차'],
+    subs:[
+      { name:'윈난 (云南)', alt:'800–2,750m', soil:'철분 적황토 pH 5.0–6.5', climate:'아열대 몬순 · 연강수 2,000mm',
+        gi:'성급 GI 11구역 (경곡·방빙·이무·빙도)', teas:'보이차 · 전홍(滇紅) · 고수차(古樹茶)', flavor:'꿀향·장뇌향(樟香)·후추 여운 · 강한 후운(喉韻)' },
+      { name:'복건 무이산 (武夷岩茶)', alt:'100–800m', soil:'화산암·산화철 pH 4.5–5.6', climate:'습도 80%+ · 연강수 2,000mm · 서늘한 밤',
+        gi:'국가 GI 2002 (정암·반암·주암 구분 체계)', teas:'대홍포 · 육계 · 수선 · 5대 명총', flavor:'암운(岩韻): 광물향·난화향·볶음 호박색' },
+      { name:'복건 안계 (安溪鐵觀音)', alt:'200–600m', soil:'홍색 산성토 pH 4.5–5.6 유기물 풍부', climate:'평균 16–21°C · 습도 78.5% · 연강수 1,782mm',
+        gi:'국가 GI 2004', teas:'철관음 (청향형·농향형)', flavor:'난화향 · 관음운(觀音韻) · 크리미한 꿀 여운' },
+      { name:'절강 서호 (西湖龍井)', alt:'100–400m', soil:'백석영 사질토 · 서호 특수 미기후', climate:'안개 잦음 · 연 200일 이상 구름',
+        gi:'국가 GI 2001 (핵심·주변부 이중 체계)', teas:'서호용정(西湖龍井)', flavor:'완두향·단맛·밤향 · 맑고 상쾌한 여운' },
+      { name:'안휘 기문 (祁門紅茶)', alt:'500–1,000m', soil:'적색 균형토 · 와인 테루아 유사', climate:'중간 고도 · 안개와 적당한 강수',
+        gi:'국가 GI', teas:'기문홍차(祁門紅茶) · 세계 3대 홍차', flavor:'기문향(祁門香): 장미·복숭아·꿀 복합향' },
+    ]
+  },
+  {
+    id:'japan', label:'일본', flag:'🇯🇵', lat:35, lon:137, r:10, color:'#4a7a52',
+    prod:'국내 생산 약 24,000 MT · 말차 수출 급성장 (2025)',
+    types:['녹차','말차','호지차','겐마이차'],
+    subs:[
+      { name:'우지 (宇治, 교토)', alt:'구릉 100–200m', soil:'산성 양토 pH 4.5–5.5', climate:'강 안개(川霧) 미기후 · 연강수 1,300mm',
+        gi:'국가 GI · 우지차 UNESCO 문화유산 1999', teas:'교쿠로 · 말차 · 카부세 · 센차', flavor:'감칠맛 극대 · 크리미 · 꽃향 · 달콤' },
+      { name:'야메 (八女, 후쿠오카)', alt:'산골짜기 300–500m', soil:'잘 배수되는 양토 · 아침 안개', climate:'큰 일교차 · 안개 잦음',
+        gi:'八女伝統本玉露 GI (볏짚 차광 고수 · 전국 교쿠로 45%)', teas:'전통본교쿠로 · 말차', flavor:'농밀한 감칠맛 · 부드러움 · 캐러멜 달콤' },
+      { name:'가고시마 (鹿児島)', alt:'0–500m 시라스 화산회토', soil:'화산재(白砂) · 배수 탁월', climate:'아열대 · 연 4회 수확 가능',
+        gi:'현급 브랜드 · 전국 생산 1위(2024년 역전)', teas:'깊은 증청 센차 · 유타카미도리 품종', flavor:'부드럽고 감칠맛 · 낮은 떫음 · 에메랄드 수색' },
+      { name:'니시오 (西尾, 아이치)', alt:'충적 평야', soil:'비옥한 충적 양토 · 좋은 배수', climate:'온화 · 일조 풍부',
+        gi:'지역 단체상표 2009 (말차 전문 단일 산지)', teas:'덴차(碾茶) · 말차 (전국 20%)', flavor:'선명한 에메랄드빛 · 높은 감칠맛 · 의식용 등급' },
+    ]
+  },
+  {
+    id:'korea', label:'한국', flag:'🇰🇷', lat:34.5, lon:127, r:7, color:'#4a7a52',
+    prod:'약 3,900 MT · 2026 시장 규모 $125M',
+    types:['녹차','황차','발효차(발효차)'],
+    subs:[
+      { name:'보성 (전남)', alt:'100–400m', soil:'맥반석 화강암 기반 pH 4.5–5.5 · 배수 양호', climate:'해양성 · 연강수 1,400–1,600mm · 봄 안개',
+        gi:'국가 GI 1호 (2002)', teas:'덖음 녹차 · 우전·세작·중작', flavor:'고소함·단맛·아미노산 풍부 · 황록 수색' },
+      { name:'하동 (경남)', alt:'지리산 골짜기 100–500m', soil:'암반·영양 풍부한 토양', climate:'지리산이 북풍 차단 · 연강수 1,500mm · 봄 안개',
+        gi:'FAO GIAHS 2017 (세계중요농업유산)', teas:'작설차 · 황차 · 발효차', flavor:'광물향·야생성·구수한 볶음향 · 과실향 복합' },
+      { name:'제주 (특별자치도)', alt:'한라산 남사면 100–300m', soil:'현무암 화산토 · 배수 탁월 · 미네랄 풍부', climate:'아열대~온대 · 평균 16–18°C · 연강수 1,800–2,000mm',
+        gi:'지역 브랜드 (오설록 주도)', teas:'증청 녹차 · 유기농', flavor:'신선·달콤·크리미 · 낮은 떫음' },
+    ]
+  },
+  {
+    id:'taiwan', label:'대만', flag:'🇹🇼', lat:23.5, lon:121, r:8, color:'#7a6040',
+    prod:'고급 우롱차 전문 · 세계 우롱 시장 약 20% 점유',
+    types:['우롱차','홍차'],
+    subs:[
+      { name:'아리산 (阿里山, 嘉義)', alt:'1,000–1,700m', soil:'산악 양토 · 화산 영향', climate:'서늘 · 안개 잦음 · 큰 일교차',
+        gi:'지역 브랜드', teas:'아리산 고산 우롱', flavor:'사탕향·난화향·감칠맛·꽃향 복합' },
+      { name:'리산 (梨山, 台中)', alt:'1,600–2,400m', soil:'산악 양토 · 미네랄 풍부', climate:'고지대 서늘 · 극한 일교차',
+        gi:'프리미엄 지역 브랜드', teas:'리산 고산 우롱', flavor:'복숭아향 · 정제된 꽃향 · 우아함' },
+      { name:'동방미인 (新竹·苗栗)', alt:'300–800m', soil:'구릉 양토', climate:'소록엽선충(茶小綠葉蟬) 교상 필수 · 강발효 60–70%',
+        gi:'지역 GI (白毫烏龍)', teas:'동방미인 (발효도 60–70%)', flavor:'꿀향·열대과일·재스민·머스캣' },
+      { name:'동정오룡 (凍頂, 南投)', alt:'800–1,000m', soil:'산악 양토', climate:'전통 배화(焙火) 산지',
+        gi:'전통 지역 브랜드', teas:'동정 전통 배화 우롱', flavor:'견과·카라멜·배화향·호두 여운' },
+    ]
+  },
+  {
+    id:'india', label:'인도', flag:'🇮🇳', lat:24, lon:80, r:13, color:'#c44b37',
+    prod:'세계 2위 · 약 14억 kg (2024) · 수출 2억 8천만 kg',
+    types:['홍차','녹차','CTC'],
+    subs:[
+      { name:'다즐링 (Darjeeling, 서벵골)', alt:'600–2,000m', soil:'산악 양토 pH 4.5–5.5', climate:'서늘 · 고강수 · 안개 · 큰 일교차',
+        gi:'GI 2004 (인도 최초) · EU PGI 2011', teas:'퍼스트 플러시(4월) · 세컨드 머스캣(5–6월)', flavor:'꽃향·포도향·와인질감 · 세컨드 플러시 머스캣 최절정' },
+      { name:'아삼 (Assam, 브라마푸트라)', alt:'45–60m 저지대', soil:'충적 양토 · 중성 pH', climate:'아열대 몬순 · 고강수 · 더운 기온',
+        gi:'지역 GI', teas:'CTC 아삼 (전체 85%) · 정통 흑차', flavor:'몰트향·강한 바디·밀크티 최적 · 두꺼운 아삼종(大葉種)' },
+      { name:'닐기리 (Nilgiri, 타밀나두)', alt:'1,000–2,500m', soil:'산악 양토 pH 4.5–5.5', climate:'연중 생산 · 서리 스트레스 특수 효과',
+        gi:'지역 브랜드', teas:'닐기리 블랙 · 서리차(Frost Tea)', flavor:'경쾌·과실향·장미·자몽 · 밝은 수색' },
+      { name:'시킴 (Temi 단일 농원)', alt:'약 1,600m', soil:'히말라야 산악 양토', climate:'고지대 서늘 · 안개',
+        gi:'단일 농원 유기농 인증 (IMO 2008)', teas:'테미 단일 농원 홍차', flavor:'향신료향·꽃향·머스캣 힌트·섬세함' },
+    ]
+  },
+  {
+    id:'srilanka', label:'스리랑카', flag:'🇱🇰', lat:7.5, lon:80.5, r:9, color:'#c44b37',
+    prod:'세계 4위 · 2억 6천 4백만 kg 수출 (2025)',
+    types:['세이론 홍차'],
+    subs:[
+      { name:'누와라엘리야 (Nuwara Eliya)', alt:'약 1,868m (최고지)', soil:'산악 양토 pH 4.5–5.5', climate:'서늘·안개·봄/가을 최성기',
+        gi:'세이론 티(Ceylon Tea) 지역 마크', teas:'누와라엘리야 블랙', flavor:'섬세·감귤·담황금색 · 다즐링 유사 캐릭터' },
+      { name:'우바 (Uva)', alt:'중고지', soil:'산악 양토', climate:'카찬 건조풍(7–9월) · 몬순 스트레스',
+        gi:'세이론 티 계절 프리미엄 · 세계 3대 홍차', teas:'우바 시즌 블랙', flavor:'멘톨·유칼립투스·건조하고 달콤한 여운' },
+      { name:'딤불라 (Dimbula)', alt:'1,050–1,525m', soil:'산악 토양', climate:'서풍 건기(1–3월) 최성기',
+        gi:'세이론 티 마크', teas:'딤불라 블랙', flavor:'재스민·사이프러스·경쾌·오렌지 금빛 수색' },
+      { name:'루후나 (Ruhuna, 저지)', alt:'600m 이하', soil:'저지대 양토', climate:'따뜻·몬순 의존 · 전국 60% 생산',
+        gi:'세이론 티 마크', teas:'루후나 블랙', flavor:'풀바디·카라멜·스모키·진한 호박색' },
+    ]
+  },
+  {
+    id:'nepal', label:'네팔', flag:'🇳🇵', lat:27.5, lon:84, r:5, color:'#c44b37',
+    prod:'약 2만 6천 MT · 일람·칸얌 고산 전통 산지',
+    types:['홍차','녹차'],
+    subs:[
+      { name:'일람 (Ilam)', alt:'1,370–1,520m', soil:'히말라야 양토 pH 4.5–5.5', climate:'다즐링과 동일한 테루아 · 서늘·안개',
+        gi:'지역 브랜드 · FLO 공정무역 인증', teas:'일람 정통 홍차', flavor:'꽃향·견과향·자연 단맛·투명한 수색' },
+    ]
+  },
+  {
+    id:'kenya', label:'케냐', flag:'🇰🇪', lat:0, lon:37, r:11, color:'#c44b37',
+    prod:'아프리카 1위 수출국 · 약 6억 5천만 kg (2025)',
+    types:['홍차','CTC','퍼플티'],
+    subs:[
+      { name:'케리초 (Kericho)', alt:'1,500–2,000m', soil:'화산성 적색 양토', climate:'고지 · 안개 · 서늘',
+        gi:'지역 브랜드 (Kericho Gold)', teas:'CTC 홍차·녹차 99% · 정통 전환 중', flavor:'경쾌·강함·황금빛 수색' },
+      { name:'케냐 퍼플티 (TRFK 306)', alt:'중앙 고원', soil:'화산성 적색 양토', climate:'서늘 고원',
+        gi:'케냐 차 연구원(TRFK) 품종 특허', teas:'퍼플티 (안토시아닌 극고함량)', flavor:'과실향·꽃향·건강 기능성 최전선' },
+    ]
+  },
+  {
+    id:'rwanda', label:'르완다', flag:'🇷🇼', lat:-2, lon:30, r:5, color:'#c44b37',
+    prod:'약 4만 MT · 2012년 "아프리카 최우수 차" 수상',
+    types:['스페셜티 홍차'],
+    subs:[
+      { name:'카롱기·기소부 (Karongi/Gisovu)', alt:'2,300m+', soil:'화산 고산 토양', climate:'고지대 서늘 · 안개 · 분쟁 후 재건',
+        gi:'지역 프리미엄 브랜드', teas:'르완다 스페셜티 홍차', flavor:'복합적 바디·달콤·황금빛·정제된 아프리카 특색' },
+    ]
+  },
+  {
+    id:'vietnam', label:'베트남', flag:'🇻🇳', lat:16, lon:106, r:8, color:'#4a7a52',
+    prod:'세계 5위 · 약 18만 5천 MT',
+    types:['녹차','연꽃차','홍차'],
+    subs:[
+      { name:'탄 쿠엉 (Tân Cương)', alt:'약 500m', soil:'양토 산악 · 미네랄 풍부', climate:'아열대 · 비옥한 분지',
+        gi:'지역 브랜드 ("녹차의 왕국")', teas:'피시훅 녹차 · 탄쿠엉 녹차', flavor:'신선한 풀향·가벼운 단맛·섬세함' },
+    ]
+  },
+  {
+    id:'indonesia', label:'인도네시아', flag:'🇮🇩', lat:-3, lon:117, r:8, color:'#c44b37',
+    prod:'주요 홍차·녹차 생산국 · 서부 자바 전국 67%',
+    types:['홍차','녹차','재스민차'],
+    subs:[
+      { name:'서부 자바 (말라바르 고산)', alt:'고원 다양', soil:'화산성 · 다양한 토양', climate:'열대 · 고강수 (전국 67%)',
+        gi:'지역 브랜드 (말라바르 역사 농원 1890년대)', teas:'인도네시아 홍차·녹차 · 재스민 블렌드', flavor:'흙향·균형잡힘·일부 꽃향 블렌드' },
+    ]
+  },
+  {
+    id:'turkey', label:'터키', flag:'🇹🇷', lat:41, lon:40, r:10, color:'#c44b37',
+    prod:'세계 1인당 소비 1위 (약 1kg/인/년) · 약 50만 MT',
+    types:['흑차 (Orthodox)'],
+    subs:[
+      { name:'리제 (Rize, 흑해 연안)', alt:'해안 구릉', soil:'비옥한 양토 pH 5.0–6.0', climate:'흑해 해양성 · 연강수 2,200mm · 온난',
+        gi:'국가 GI (Çaykur 국영 독점)', teas:'터키 흑차 (Orthodox 위주)', flavor:'짙은 마호가니·흙향·약간 떫음 · 각설탕 필수 문화' },
+    ]
+  },
+  {
+    id:'argentina', label:'아르헨티나', flag:'🇦🇷', lat:-27, lon:-65, r:7, color:'#6a7a40',
+    prod:'예르바 마테 세계 2위 생산 · 약 88만 MT (FAO)',
+    types:['예르바 마테 (Yerba Maté)'],
+    subs:[
+      { name:'미시오네스 (Misiones)', alt:'아열대 구릉', soil:'붉은 화산 양토 · 영양 풍부', climate:'아열대 · 고강수 · 따뜻',
+        gi:'아르헨티나 지역 브랜드', teas:'예르바 마테 (훈연 · 9–24개월 숙성)', flavor:'흙향·스모키·복잡함·나무 숙성 캐릭터' },
+      { name:'파라나·산타카타리나 (브라질)', alt:'아열대 고원', soil:'적색 양토 · 비옥', climate:'아열대 · 고강수',
+        gi:'브라질 지역 브랜드', teas:'시마항(Chimarrão) — 신선 분쇄 마테', flavor:'신선 풀향·크리미·밝은 그린' },
+    ]
+  },
+  {
+    id:'portugal', label:'아조레스 (포르투갈)', flag:'🇵🇹', lat:37.8, lon:-25.7, r:4, color:'#4a7a52',
+    prod:'유럽 유일 차 생산지 · 고레아나 농원 1883년 설립',
+    types:['녹차','황차','홍차'],
+    subs:[
+      { name:'상미겔섬 (São Miguel, 아조레스)', alt:'저~중고도 화산', soil:'현무암 화산토', climate:'대서양 아열대 · 안개 · 서늘',
+        gi:'EU 지역 생산자 (유럽 최고령·유일 차 생산지)', teas:'고레아나 녹차·황차·홍차', flavor:'부드럽고 섬세함 · 광물향 · 화산 테루아 특색' },
+    ]
+  },
+  {
+    id:'uk', label:'영국', flag:'🇬🇧', lat:52, lon:-2, r:6, color:'#9e8c70',
+    prod:'생산 없음 · 세계 최대 차 블렌딩·소비 문화 중심',
+    types:['차 문화 (블렌딩·소비)'],
+    subs:[
+      { name:'런던·브리스톨 (블렌딩 허브)', alt:'N/A', soil:'N/A', climate:'온대 해양성',
+        gi:'트와이닝스 1706 (세계 최고령 차 회사) · 포트넘&메이슨 왕실 영장', teas:'잉글리시 브렉퍼스트 · 얼 그레이 · 애프터눈 티', flavor:'지역 블렌드 중심 (얼 그레이: 베르가못+기문홍차 기반)' },
+    ]
+  },
+];
+
+// ── Map setup ──────────────────────────────────────────────
+const svgEl = d3.select('#map');
+const g = svgEl.append('g').attr('class','map-g');
+const projection = d3.geoNaturalEarth1();
+const pathGen = d3.geoPath().projection(projection);
+const tt = document.getElementById('tt');
+
+// Sphere (ocean)
+g.append('path').datum({type:'Sphere'}).attr('class','sphere').attr('d', pathGen);
+
+// Graticule
+const graticule = d3.geoGraticule()();
+g.append('path').datum(graticule).attr('class','graticule').attr('d', pathGen);
+
+// Tropics
+function tropicPath(lat) {
+  return pathGen({type:'LineString', coordinates: d3.range(-180,181,1).map(lon=>[lon,lat])});
+}
+
+// Country paths placeholder
+const countryG = g.append('g').attr('class','countries');
+const markerG  = g.append('g').attr('class','markers');
+
+let currentTransform = d3.zoomIdentity;
+
+function getSize() {
+  const el = document.getElementById('mapArea');
+  const w = el.clientWidth;
+  const h = el.clientHeight || Math.max(380, w * 0.52);
+  return {w, h};
+}
+
+function updateProjection(w, h) {
+  projection
+    .scale(Math.min(w, h * 1.9) * 0.155)
+    .translate([w / 2, h / 2]);
+  pathGen.projection(projection);
+}
+
+function renderMap(countries) {
+  const {w, h} = getSize();
+  svgEl.attr('width', w).attr('height', h);
+  updateProjection(w, h);
+
+  // Sphere + graticule
+  svgEl.select('.sphere').attr('d', pathGen);
+  svgEl.select('.graticule').attr('d', pathGen);
+
+  // Tropics
+  g.selectAll('.tropic').remove();
+  [23.5, -23.5, 0].forEach(lat => {
+    g.append('path')
+      .attr('class','tropic')
+      .attr('d', tropicPath(lat));
+  });
+
+  // Countries
+  countryG.selectAll('.country').remove();
+  countryG.selectAll('.country')
+    .data(countries)
+    .enter().append('path')
+    .attr('class','country')
+    .attr('d', pathGen);
+
+  renderMarkers();
+}
+
+function renderMarkers() {
+  markerG.selectAll('.marker-wrap').remove();
+
+  REGIONS.forEach(r => {
+    const pos = projection([r.lon, r.lat]);
+    if (!pos || pos.some(isNaN)) return;
+    const [x, y] = pos;
+
+    const mg = markerG.append('g')
+      .attr('class','marker-wrap')
+      .attr('transform', `translate(${x},${y})`)
+      .on('mouseover', function(event) {
+        tt.style.display = 'block';
+        tt.textContent = r.label;
+      })
+      .on('mousemove', function(event) {
+        tt.style.left = (event.clientX + 12) + 'px';
+        tt.style.top  = (event.clientY - 24) + 'px';
+      })
+      .on('mouseout', function() { tt.style.display = 'none'; })
+      .on('click', function() { showPanel(r); });
+
+    mg.append('circle').attr('class','m-pulse')
+      .attr('r', r.r + 5)
+      .attr('stroke', r.color)
+      .attr('stroke-width', 1.5);
+
+    mg.append('circle').attr('class','m-dot')
+      .attr('r', r.r)
+      .attr('fill', r.color);
+  });
+}
+
+// ── Panel ──────────────────────────────────────────────────
+function showPanel(r) {
+  const panel = document.getElementById('panel');
+  const typeChips = r.types.map(t => `<span class="type-chip">${t}</span>`).join('');
+  const subCards = r.subs.map(s => `
+    <div class="sub-card" style="border-left-color:${r.color}">
+      <div class="sub-title">${s.name}</div>
+      <div class="sub-grid">
+        <div><div class="sg-key">고도</div><div class="sg-val">${s.alt}</div></div>
+        <div><div class="sg-key">토양</div><div class="sg-val">${s.soil}</div></div>
+        <div><div class="sg-key">기후</div><div class="sg-val">${s.climate}</div></div>
+        <div><div class="sg-key">GI 보호</div><div class="sg-val">${s.gi}</div></div>
+      </div>
+      <div class="sub-teas" style="color:${r.color}">${s.teas}</div>
+      <div class="sub-flavor">"${s.flavor}"</div>
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="p-country">
+      <div class="p-head">
+        <div class="p-flag">${r.flag}</div>
+        <div>
+          <div class="p-name">${r.label}</div>
+          <div class="p-prod">${r.prod}</div>
+        </div>
+      </div>
+      <div class="type-chips">${typeChips}</div>
+      <div class="sub-cards">${subCards}</div>
+    </div>`;
+}
+
+// ── Zoom ──────────────────────────────────────────────────
+const zoom = d3.zoom()
+  .scaleExtent([1, 8])
+  .on('zoom', event => {
+    currentTransform = event.transform;
+    g.attr('transform', event.transform);
+  });
+svgEl.call(zoom);
+
+document.getElementById('zIn').onclick    = () => svgEl.transition().call(zoom.scaleBy, 1.6);
+document.getElementById('zOut').onclick   = () => svgEl.transition().call(zoom.scaleBy, 0.625);
+document.getElementById('zReset').onclick = () => svgEl.transition().call(zoom.transform, d3.zoomIdentity);
+
+// ── Load world data ────────────────────────────────────────
+let worldFeatures = [];
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+  .then(world => {
+    worldFeatures = topojson.feature(world, world.objects.countries).features;
+    renderMap(worldFeatures);
+  })
+  .catch(() => {
+    document.getElementById('mapArea').innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#7a7065;font-size:.9rem">지도 데이터를 불러오려면 인터넷 연결이 필요합니다.</div>';
+  });
+
+// ── Resize ────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  if (!worldFeatures.length) return;
+  renderMap(worldFeatures);
+});
+</script>
+</body>
+</html>

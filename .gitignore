@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Claude Code
+.claude/
+
+# MkDocs generated site
+.mkdocs_site/
+
+# Local-only knowledge files (not for GitHub)
+RESEARCH/
+raw/
+textbook/
+wiki/
+SCHEMA.md
+_index.md
+index.md
+log.md
+mkdocs.yml

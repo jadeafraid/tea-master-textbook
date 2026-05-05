@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6대 다류 · 향미 휠</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#19140f;--bg2:#211a13;--bg3:#2c2218;
+  --text:#e4cfa0;--dim:#7a6a52;--gold:#c8962c;--border:#3a2e20;
+  --r:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif;min-height:100vh;padding-bottom:60px}
+header{padding:26px 32px 20px;border-bottom:1px solid var(--border)}
+header h1{font-size:1.2rem;font-weight:700;color:var(--gold);letter-spacing:.06em}
+header p{font-size:.76rem;color:var(--dim);margin-top:5px}
+
+/* Spectrum */
+#spec-wrap{padding:22px 32px 0}
+#spec-wrap h2{font-size:.65rem;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-bottom:11px}
+#spec-bar{display:flex;height:54px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.spec-tile{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;transition:filter .2s,box-shadow .15s;padding:2px 3px;
+  border-right:1px solid rgba(0,0,0,.25);
+}
+.spec-tile:last-child{border-right:none}
+.spec-tile:hover{filter:brightness(1.25)}
+.spec-tile.active{filter:brightness(1.35);box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.55)}
+.spec-tile.dimmed{filter:brightness(.38) saturate(.5)}
+.spec-tile .tn{font-size:.82rem;font-weight:700;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.9);letter-spacing:.03em}
+.spec-tile .tp{font-size:.58rem;color:rgba(255,255,255,.7);text-shadow:0 1px 3px rgba(0,0,0,.9);margin-top:1px}
+
+/* Oxidation scale bar */
+#ox-bar{margin-top:6px;padding:0 1px}
+#ox-grad{height:3px;border-radius:2px;background:linear-gradient(to right,#3a7d44 0%,#7aba65 12%,#b8a000 22%,#c07830 52%,#8b2500 85%,#3c2010 100%)}
+#ox-ticks{display:flex;justify-content:space-between;margin-top:4px;font-size:.58rem;color:var(--dim)}
+
+/* Main layout */
+#main{display:grid;grid-template-columns:1fr 316px;gap:22px;padding:22px 32px;align-items:start}
+@media(max-width:820px){#main{grid-template-columns:1fr}}
+
+/* Wheel */
+#wheel-wrap{display:flex;flex-direction:column;align-items:center}
+#wlabel{font-size:.64rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+svg#fw{width:100%;max-width:500px;height:auto;display:block}
+
+/* Detail panel */
+#detail{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;min-height:380px}
+.dt{font-size:1rem;font-weight:700;margin-bottom:2px}
+.ds{font-size:.7rem;color:var(--dim);margin-bottom:14px}
+.dsec{margin-bottom:13px}
+.dsl{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.dsb{font-size:.79rem;line-height:1.72}
+.fb-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.fb-name{width:50px;font-size:.7rem;color:var(--dim);text-align:right;flex-shrink:0}
+.fb-track{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.fb-fill{height:100%;border-radius:3px;transition:width .4s}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.tag{font-size:.68rem;padding:2px 8px;border-radius:12px;background:var(--bg3);border:1px solid var(--border)}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:320px;text-align:center;gap:12px}
+.ph-ic{font-size:2.4rem;opacity:.18}
+.ph-p{font-size:.78rem;color:var(--dim);line-height:1.9}
+#hint{text-align:center;padding:10px 32px 0;font-size:.7rem;color:var(--dim)}
+
+/* Source footnote */
+#sources{padding:0 32px;margin-top:28px;border-top:1px solid var(--border);padding-top:16px}
+#sources p{font-size:.64rem;color:var(--dim);line-height:1.8}
+#sources a{color:var(--dim);text-decoration:none}
+#sources a:hover{color:var(--text)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>6대 다류 · 향미 휠</h1>
+  <p>산화 스펙트럼의 차 타일 또는 향미 휠 섹터를 클릭 — 향과 차종이 양방향으로 연동됩니다</p>
+</header>
+
+<div id="spec-wrap">
+  <h2>산화 스펙트럼 · Oxidation Spectrum</h2>
+  <div id="spec-bar"></div>
+  <div id="ox-bar">
+    <div id="ox-grad"></div>
+    <div id="ox-ticks"><span>0% 불산화</span><span>완전산화</span><span>후발효</span></div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="wheel-wrap">
+    <div id="wlabel">향미 휠 · Flavor Wheel — 클릭하여 탐색</div>
+    <svg id="fw" viewBox="-265 -265 530 530" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div id="detail"></div>
+</div>
+
+<div id="hint">클릭한 항목을 다시 클릭하면 선택 해제 · 중앙 원 클릭으로 초기화</div>
+
+<div id="sources">
+  <p>
+    참고: 향미분류_Flavor_Wheel.md · 6대다류_가공과학.md (내부 지식베이스) /
+    <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10340347/" target="_blank">PMC10340347 — Aroma in 18 teas (GC-IMS)</a> ·
+    <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12346385/" target="_blank">PMC12346385 — Volatile Compounds Review 2025</a> ·
+    <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8911931/" target="_blank">PMC8911931 — Key Aroma in Chinese Black Teas</a>
+  </p>
+</div>
+
+<script>
+/* ── DATA ─────────────────────────────────────────────────────────── */
+
+const FLAVORS = [
+  {
+    id:'floral', label:'꽃향', en:'Floral', col:'#d08aef', angle:0,
+    compounds:'Linalool, Geraniol, Methyl jasmonate, 2-Phenylethanol, Indole',
+    mech:'주청(做青)·효소적 산화 과정에서 글리코사이드 결합 테르펜류 방출. 카로티노이드 분해로 β-ionone 생성',
+    teas:{green:1,white:2,yellow:1,oolong:3,black:2,dark:1},
+    subs:[
+      {id:'jasmine',  label:'재스민향',   teas:['oolong']},
+      {id:'orchid',   label:'난화향',     teas:['oolong','black']},
+      {id:'rose',     label:'장미향',     teas:['black','white']},
+      {id:'osmanthus',label:'계화향',     teas:['oolong']},
+      {id:'cherry',   label:'벚꽃향',     teas:['oolong','white']},
+      {id:'gardenia', label:'치자·목련향',teas:['oolong']},
+    ]
+  },
+  {
+    id:'fruity', label:'과실향', en:'Fruity', col:'#f59a3a', angle:60,
+    compounds:'Hexanal, Esters, β-damascone, β-ionone, trans-Linalool oxide',
+    mech:'지방산 분해·카로티노이드 산화로 C6 알데히드류와 에스터 형성. 홍차 β-프리메베로사이드 분해',
+    teas:{green:0,white:2,yellow:1,oolong:3,black:3,dark:2},
+    subs:[
+      {id:'peach',  label:'복숭아향',    teas:['oolong','black']},
+      {id:'lychee', label:'리치향',      teas:['black']},
+      {id:'muscat', label:'머스캣향',    teas:['oolong','black']},
+      {id:'plum',   label:'자두·매자향', teas:['dark','oolong']},
+      {id:'dates',  label:'대추·용안향', teas:['dark']},
+      {id:'citrus', label:'감귤향',      teas:['black']},
+    ]
+  },
+  {
+    id:'vegetal', label:'식물향', en:'Vegetal', col:'#52cc72', angle:120,
+    compounds:'Hexanal, (E)-2-Hexenal, 1-Hexanol, Dimethyl sulfide, Methional',
+    mech:'살청 직후 세포 지방산 분해로 C6 알데히드·알코올 방출. 증청(蒸靑)은 Dimethyl sulfide로 해조향',
+    teas:{green:3,white:1,yellow:2,oolong:1,black:0,dark:0},
+    subs:[
+      {id:'grass',  label:'풀향·청향', teas:['green','oolong']},
+      {id:'seaweed',label:'해조향',    teas:['green']},
+      {id:'bean',   label:'콩향',      teas:['green','yellow']},
+      {id:'corn',   label:'옥수수향',  teas:['yellow','green']},
+      {id:'veggie', label:'채소향',    teas:['green']},
+    ]
+  },
+  {
+    id:'roasted', label:'볶음향', en:'Roasted', col:'#e8b840', angle:180,
+    compounds:'Pyrazines, Furfural, 5-methylfurfural, Furans, Maillard 복합 산물',
+    mech:'마이야르(Maillard) 반응 — 당 + 아미노산 고온 반응. 덖기(炒)·배화(焙) 공정에서 집중 발생',
+    teas:{green:2,white:0,yellow:2,oolong:2,black:1,dark:0},
+    subs:[
+      {id:'chestnut',label:'밤향',     teas:['green','yellow','oolong']},
+      {id:'nut',     label:'견과향',   teas:['oolong','black']},
+      {id:'caramel', label:'카라멜향', teas:['oolong','black']},
+      {id:'toast',   label:'토스트향', teas:['oolong']},
+      {id:'smoke',   label:'훈연향',   teas:['black']},
+      {id:'spice',   label:'향신료향', teas:['oolong']},
+    ]
+  },
+  {
+    id:'fermented', label:'발효향', en:'Fermented', col:'#b87c38', angle:240,
+    compounds:'Terpenoids, Sesquiterpenes, Guaiacol, 미생물 대사산물',
+    mech:'미생물(Aspergillus niger 주도) 발효 및 창고 장기 숙성. 장기 산화 중 복잡한 이차 반응',
+    teas:{green:0,white:1,yellow:0,oolong:0,black:1,dark:3},
+    subs:[
+      {id:'earth',   label:'흙향·진향', teas:['dark']},
+      {id:'wood',    label:'나무·장향', teas:['dark']},
+      {id:'mushroom',label:'버섯향',    teas:['dark']},
+      {id:'herb',    label:'약재향',    teas:['dark','white']},
+      {id:'honey',   label:'꿀향',      teas:['white','oolong','dark']},
+    ]
+  },
+  {
+    id:'umami', label:'우마미', en:'Umami', col:'#50ccdf', angle:300,
+    compounds:'L-Theanine, L-Glutamic acid, L-Aspartic acid, 메틸화 카테킨',
+    mech:'차광 재배로 L-테아닌 축적 극대화. T1R1+T1R3 우마미 수용체 활성화. 녹차 건중량의 1~2%',
+    teas:{green:3,white:1,yellow:1,oolong:0,black:0,dark:0},
+    subs:[
+      {id:'fresh', label:'신선·鮮爽',      teas:['green','white','yellow']},
+      {id:'sweet', label:'달콤·蜜甜',      teas:['green','white']},
+      {id:'marine',label:'해양·바다향',    teas:['green']},
+      {id:'cream', label:'크리미·부드러움',teas:['green','yellow']},
+    ]
+  }
+];
+
+const TEAS = [
+  {
+    id:'green', label:'녹차', en:'Green Tea', col:'#3a7d44',
+    ox:'0%', oxLabel:'불산화',
+    proc:'살청(殺青) → 유념 → 건조',
+    examples:'용정, 벽라춘, 교쿠로, 말차, 우전',
+    desc:'폴리페놀산화효소(PPO)를 고온으로 즉시 불활성화. 카테킨·테아닌·클로로필 최대 보존. 일본 증청(蒸靑)은 해조향; 중국 초청(炒靑)은 밤·콩향. 차광 재배 교쿠로·말차는 우마미가 가장 강함.',
+    fp:{floral:1,fruity:0,vegetal:3,roasted:2,fermented:0,umami:3}
+  },
+  {
+    id:'white', label:'백차', en:'White Tea', col:'#b89a68',
+    ox:'5~15%', oxLabel:'경산화',
+    proc:'위조(萎凋) → 건조',
+    examples:'백호은침, 백모단, 공미, 수미',
+    desc:'살청·유념 없이 자연 시들리기만으로 만드는 최소 가공 차. 위조 중 약한 효소적 산화로 아미노산 풍부 보존. 숙성 경로: 꽃향·과실향 → 꿀향 → 약재향. "一年茶, 三年藥, 七年寶."',
+    fp:{floral:2,fruity:2,vegetal:1,roasted:0,fermented:1,umami:1}
+  },
+  {
+    id:'yellow', label:'황차', en:'Yellow Tea', col:'#b89600',
+    ox:'~10% + 민황', oxLabel:'경산화 + 민황',
+    proc:'살청 → 민황(悶黃) → 건조',
+    examples:'군산은침, 몽정황아, 곽산황아',
+    desc:'살청 후 민황(悶黃) 단계 추가 — 뜨거운 습열에서 클로로필 분해, 폴리페놀 부분 산화. 황색 탕색과 부드러운 옥수수·밤향이 특유. 6대 다류 중 생산량 가장 희소.',
+    fp:{floral:1,fruity:1,vegetal:2,roasted:2,fermented:0,umami:1}
+  },
+  {
+    id:'oolong', label:'우롱차', en:'Oolong Tea', col:'#c07830',
+    ox:'15~85%', oxLabel:'부분산화',
+    proc:'햇볕 위조 → 주청(做青) → 살청 → 유념 → 건조 → 배화',
+    examples:'철관음, 봉황단총, 대홍포, 동방미인, 고산우롱',
+    desc:'부분 산화의 넓은 스펙트럼. 주청으로 잎 주변부부터 산화("綠葉紅鑲邊"). 배화 정도에 따라 청향형(꽃향)에서 볶음형까지. 봉황단총 10대 향형, 무이암차 암운(岩韻) 등 6대 다류 중 향의 다양성 최고.',
+    fp:{floral:3,fruity:3,vegetal:1,roasted:2,fermented:0,umami:0}
+  },
+  {
+    id:'black', label:'홍차', en:'Black Tea', col:'#8b2500',
+    ox:'80~100%', oxLabel:'완전산화',
+    proc:'위조 → 유념 → 산화(발효) → 건조',
+    examples:'기문홍차, 정산소종, 전홍, 다즐링, 아쌈, 우바',
+    desc:'완전 효소적 산화. 카테킨 → 테아플라빈(TF, 황금색) → 테아루비긴(TR, 적갈색) 형성. TF/TR 비율이 품질 결정. 확인된 향 성분 600종 이상. 산지(기문·아쌈·실론 등)별 향 특성 뚜렷.',
+    fp:{floral:2,fruity:3,vegetal:0,roasted:1,fermented:1,umami:0}
+  },
+  {
+    id:'dark', label:'흑차', en:'Dark Tea', col:'#3c2010',
+    ox:'후발효', oxLabel:'미생물 발효',
+    proc:'살청 → 악퇴(渥堆) 발효 / 창고 장기 숙성',
+    examples:'생보이(生普), 숙보이(熟普), 육보차, 복전차',
+    desc:'효소적 산화가 아닌 미생물(Aspergillus niger 주도) 진성 발효. 악퇴(渥堆)로 수개월 내 수십 년 숙성 효과. 생차 향 진화: 청향→꽃향→꿀향→약재향→진향(陳香). 6대 다류 중 향의 복잡성 최고.',
+    fp:{floral:1,fruity:2,vegetal:0,roasted:0,fermented:3,umami:0}
+  }
+];
+
+/* ── SVG WHEEL ────────────────────────────────────────────────────── */
+
+const NS = 'http://www.w3.org/2000/svg';
+const RI = 68, RM = 153, RO = 230, GAP = 1.8;
+
+function polar(r, deg) {
+  const a = (deg - 90) * Math.PI / 180;
+  return [+(r * Math.cos(a)).toFixed(2), +(r * Math.sin(a)).toFixed(2)];
+}
+
+function arcPath(r1, r2, a1, a2) {
+  const [x1,y1]=polar(r1,a1),[x2,y2]=polar(r1,a2);
+  const [x3,y3]=polar(r2,a2),[x4,y4]=polar(r2,a1);
+  const lg = a2-a1 > 180 ? 1 : 0;
+  return `M${x1},${y1} A${r1},${r1} 0 ${lg} 1 ${x2},${y2} L${x3},${y3} A${r2},${r2} 0 ${lg} 0 ${x4},${y4} Z`;
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs||{})) el.setAttribute(k, String(v));
+  return el;
+}
+
+/* ── STATE ────────────────────────────────────────────────────────── */
+let selTea = null, selFlavor = null;
+
+/* ── BUILD SPECTRUM ───────────────────────────────────────────────── */
+function buildSpectrum() {
+  const bar = document.getElementById('spec-bar');
+  TEAS.forEach(tea => {
+    const tile = document.createElement('div');
+    tile.className = 'spec-tile';
+    tile.dataset.id = tea.id;
+    // dark tea gets a richer gradient
+    tile.style.background = tea.id === 'dark'
+      ? 'linear-gradient(175deg,#5a3018,#2a1208)'
+      : tea.col;
+    tile.innerHTML = `<span class="tn">${tea.label}</span><span class="tp">${tea.ox}</span>`;
+    tile.addEventListener('click', () => onTeaClick(tea.id));
+    bar.appendChild(tile);
+  });
+}
+
+/* ── BUILD WHEEL ──────────────────────────────────────────────────── */
+function buildWheel() {
+  const svg = document.getElementById('fw');
+  svg.innerHTML = '';
+
+  // Outer glow ring (background)
+  svg.appendChild(svgEl('circle',{cx:0,cy:0,r:RO+2,fill:'none',stroke:'#3a2e20','stroke-width':1}));
+
+  FLAVORS.forEach((fl, i) => {
+    const SA = i*60 + GAP, EA = (i+1)*60 - GAP, MID = (SA+EA)/2;
+
+    // Outer ring: sub-sectors
+    const subSpan = (EA - SA) / fl.subs.length;
+    fl.subs.forEach((sub, j) => {
+      const sA = SA + j*subSpan + 0.7, eA = SA + (j+1)*subSpan - 0.7;
+      const el = svgEl('path', {
+        d: arcPath(RM+2, RO-1, sA, eA),
+        fill: fl.col, opacity: 0.42,
+        class: `sub-sec sub-${fl.id}`,
+        'data-flavor': fl.id, 'data-sub': sub.id,
+        style: 'cursor:pointer'
+      });
+      // Tooltip
+      const title = svgEl('title', {});
+      title.textContent = sub.label;
+      el.appendChild(title);
+      el.addEventListener('click', e => { e.stopPropagation(); onFlavorClick(fl.id); });
+      svg.appendChild(el);
+    });
+
+    // Main ring sector
+    const main = svgEl('path', {
+      d: arcPath(RI+2, RM-2, SA, EA),
+      fill: fl.col, opacity: 0.88,
+      class: `main-sec sec-${fl.id}`,
+      'data-flavor': fl.id,
+      style: 'cursor:pointer'
+    });
+    main.addEventListener('click', e => { e.stopPropagation(); onFlavorClick(fl.id); });
+    svg.appendChild(main);
+
+    // Main sector label (Korean)
+    const [lx, ly] = polar((RI+RM)/2, MID);
+    const lrot = (MID > 90 && MID < 270) ? MID+90 : MID-90;
+    const lg = svgEl('g', {
+      transform: `translate(${lx},${ly}) rotate(${lrot.toFixed(1)})`,
+      'pointer-events': 'none'
+    });
+    const lt = svgEl('text', {
+      x:0,y:0,'text-anchor':'middle','dominant-baseline':'middle',
+      fill:'#1a1410','font-size':'13','font-weight':'700','font-family':'system-ui,sans-serif'
+    });
+    lt.textContent = fl.label;
+    lg.appendChild(lt);
+    svg.appendChild(lg);
+
+    // English label outside wheel
+    const [ox, oy] = polar(RO+18, MID);
+    const ot = svgEl('text', {
+      x:ox, y:oy,'text-anchor':'middle','dominant-baseline':'middle',
+      fill:fl.col,'font-size':'9','font-family':'system-ui,sans-serif',
+      opacity:'0.65','pointer-events':'none'
+    });
+    ot.textContent = fl.en;
+    svg.appendChild(ot);
+
+    // Separator line between rings
+    const [rx1,ry1]=polar(RM-1,SA-0.2),[rx2,ry2]=polar(RO,SA-0.2);
+    const sep=svgEl('line',{x1:rx1,y1:ry1,x2:rx2,y2:ry2,stroke:'#19140f','stroke-width':1.2,'pointer-events':'none'});
+    svg.appendChild(sep);
+  });
+
+  // Center circle
+  const cc = svgEl('circle', {
+    cx:0,cy:0,r:RI,fill:'#211a13',stroke:'#3a2e20','stroke-width':1.5,style:'cursor:pointer'
+  });
+  cc.addEventListener('click', () => { selTea=null; selFlavor=null; update(); });
+  svg.appendChild(cc);
+
+  // Center text group
+  const ctg = svgEl('g', {id:'ctg','pointer-events':'none'});
+  svg.appendChild(ctg);
+
+  updateCenter();
+}
+
+/* ── CENTER TEXT ──────────────────────────────────────────────────── */
+function updateCenter() {
+  const g = document.getElementById('ctg');
+  if (!g) return;
+  g.innerHTML = '';
+
+  const make = (text, y, fill, size, weight='400') => {
+    const t = svgEl('text', {
+      x:0, y,
+      'text-anchor':'middle','dominant-baseline':'middle',
+      fill, 'font-size':size, 'font-weight':weight,
+      'font-family':'system-ui,sans-serif'
+    });
+    t.textContent = text;
+    g.appendChild(t);
+  };
+
+  if (!selTea && !selFlavor) {
+    make('6대 다류', -11, '#5a4a35', 11);
+    make('향미 휠', 7, '#5a4a35', 11);
+  } else if (selTea) {
+    const t = TEAS.find(x=>x.id===selTea);
+    make(t.label, -11, t.col, 17, '700');
+    make(t.ox, 9, '#5a4a35', 9);
+  } else if (selFlavor) {
+    const f = FLAVORS.find(x=>x.id===selFlavor);
+    make(f.label, -11, f.col, 17, '700');
+    make(f.en, 9, '#5a4a35', 9);
+  }
+}
+
+/* ── UPDATE STATES ────────────────────────────────────────────────── */
+function opFromStrength(s) {
+  return [0.07, 0.32, 0.68, 1.0][s] ?? 1.0;
+}
+
+function update() {
+  const svg = document.getElementById('fw');
+
+  // Wheel sectors
+  FLAVORS.forEach(fl => {
+    const mainEl = svg.querySelector(`.sec-${fl.id}`);
+    const subEls = svg.querySelectorAll(`.sub-${fl.id}`);
+    let mo = 0.88, so = 0.42;
+
+    if (selTea) {
+      const s = TEAS.find(t=>t.id===selTea).fp[fl.id];
+      mo = opFromStrength(s);
+      so = Math.max(0.07, mo * 0.55);
+    } else if (selFlavor) {
+      if (fl.id === selFlavor) { mo = 1.0; so = 0.78; }
+      else { mo = 0.08; so = 0.05; }
+    }
+
+    if (mainEl) mainEl.setAttribute('opacity', mo);
+    subEls.forEach(el => el.setAttribute('opacity', so));
+  });
+
+  // Spectrum tiles
+  TEAS.forEach(tea => {
+    const tile = document.querySelector(`.spec-tile[data-id="${tea.id}"]`);
+    if (!tile) return;
+    tile.classList.remove('active','dimmed');
+
+    if (selTea) {
+      tile.classList.add(tea.id===selTea ? 'active' : 'dimmed');
+    } else if (selFlavor) {
+      const s = FLAVORS.find(f=>f.id===selFlavor).teas[tea.id];
+      if (s >= 2) tile.classList.add('active');
+      else if (s === 0) tile.classList.add('dimmed');
+    }
+  });
+
+  updateCenter();
+  renderDetail();
+}
+
+/* ── EVENT HANDLERS ───────────────────────────────────────────────── */
+function onTeaClick(id) {
+  selTea = selTea===id ? null : id;
+  if (selTea) selFlavor = null;
+  update();
+}
+
+function onFlavorClick(id) {
+  selFlavor = selFlavor===id ? null : id;
+  if (selFlavor) selTea = null;
+  update();
+}
+
+/* ── DETAIL PANEL ─────────────────────────────────────────────────── */
+function renderDetail() {
+  const panel = document.getElementById('detail');
+
+  if (!selTea && !selFlavor) {
+    panel.innerHTML = `
+      <div class="placeholder">
+        <div class="ph-ic">&#9749;</div>
+        <p>산화 스펙트럼에서 차 종류를<br>선택하거나 향미 휠 섹터를<br>클릭하여 상세 정보를 확인하세요</p>
+      </div>`;
+    return;
+  }
+
+  if (selTea) {
+    const tea = TEAS.find(t=>t.id===selTea);
+    const bars = FLAVORS.map(fl => {
+      const s = tea.fp[fl.id];
+      return `<div class="fb-row">
+        <span class="fb-name" style="color:${fl.col}">${fl.label}</span>
+        <div class="fb-track">
+          <div class="fb-fill" style="width:${(s/3*100).toFixed(0)}%;background:${fl.col}"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const dominant = FLAVORS
+      .filter(fl => tea.fp[fl.id] >= 2)
+      .map(fl => `<span class="tag" style="border-color:${fl.col};color:${fl.col}">${fl.label}</span>`)
+      .join('');
+
+    panel.innerHTML = `
+      <div class="dt" style="color:${tea.col}">${tea.label}
+        <span style="color:var(--dim);font-weight:400;font-size:.78rem;margin-left:4px">${tea.en}</span>
+      </div>
+      <div class="ds">${tea.oxLabel} · ${tea.ox}</div>
+      <div class="dsec">
+        <div class="dsl">향미 프로파일</div>
+        ${bars}
+      </div>
+      <div class="dsec">
+        <div class="dsl">가공 공정</div>
+        <div class="dsb">${tea.proc}</div>
+      </div>
+      <div class="dsec">
+        <div class="dsl">대표 차종</div>
+        <div class="dsb">${tea.examples}</div>
+      </div>
+      <div class="dsec">
+        <div class="dsl">가공 과학</div>
+        <div class="dsb">${tea.desc}</div>
+      </div>
+      ${dominant ? `<div class="dsec"><div class="dsl">주향 카테고리</div><div class="tags">${dominant}</div></div>` : ''}
+    `;
+    return;
+  }
+
+  if (selFlavor) {
+    const fl = FLAVORS.find(f=>f.id===selFlavor);
+
+    const tBars = TEAS.map(tea => {
+      const s = fl.teas[tea.id];
+      if (s === 0) return '';
+      return `<div class="fb-row">
+        <span class="fb-name" style="color:${tea.col}">${tea.label}</span>
+        <div class="fb-track">
+          <div class="fb-fill" style="width:${(s/3*100).toFixed(0)}%;background:${tea.col}"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const subTags = fl.subs
+      .map(s => `<span class="tag">${s.label}</span>`)
+      .join('');
+
+    panel.innerHTML = `
+      <div class="dt" style="color:${fl.col}">${fl.label}
+        <span style="color:var(--dim);font-weight:400;font-size:.78rem;margin-left:4px">${fl.en}</span>
+      </div>
+      <div class="ds">향미 카테고리</div>
+      <div class="dsec">
+        <div class="dsl">차종별 강도</div>
+        ${tBars || '<div class="dsb" style="color:var(--dim)">해당 없음</div>'}
+      </div>
+      <div class="dsec">
+        <div class="dsl">세부 향형</div>
+        <div class="tags">${subTags}</div>
+      </div>
+      <div class="dsec">
+        <div class="dsl">핵심 화합물</div>
+        <div class="dsb">${fl.compounds}</div>
+      </div>
+      <div class="dsec">
+        <div class="dsl">형성 메커니즘</div>
+        <div class="dsb">${fl.mech}</div>
+      </div>
+    `;
+  }
+}
+
+/* ── INIT ─────────────────────────────────────────────────────────── */
+buildSpectrum();
+buildWheel();
+renderDetail();
+</script>
+</body>
+</html>
